@@ -10,7 +10,9 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": ["$gcc"],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "type": "shell"
     },
     {
@@ -19,7 +21,9 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": ["$gcc"],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "type": "shell"
     },
     {
@@ -28,31 +32,39 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": ["$gcc"],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "type": "shell"
     },
     {
       "command": "make clean;make",
-      "dependsOn": ["build_libdaisy", "build_daisysp"],
+      "dependsOn": [
+        "build_libdaisy",
+        "build_daisysp"
+      ],
       "label": "build_all",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": ["$gcc"],
-      "type": "shell",
-      "group": {
-        "kind": "test",
-        "isDefault": true
-      }
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell"
     },
     {
       "command": "make clean;DEBUG=1 make",
-      "dependsOn": ["build_libdaisy", "build_daisysp"],
+      "dependsOn": [
+        "build_libdaisy",
+        "build_daisysp"
+      ],
       "label": "build_all_debug",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": ["$gcc"],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "type": "shell"
     },
     {
@@ -73,7 +85,9 @@
       "options": {
         "cwd": "${workspaceFolder}/../../libDaisy/"
       },
-      "problemMatcher": ["$gcc"],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "type": "shell"
     },
     {
@@ -82,7 +96,9 @@
       "options": {
         "cwd": "${workspaceFolder}/../../DaisySP/"
       },
-      "problemMatcher": ["$gcc"],
+      "problemMatcher": [
+        "$gcc"
+      ],
       "type": "shell"
     }
   ],
