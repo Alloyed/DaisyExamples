@@ -89,6 +89,7 @@
                 }
             }
         ]
-    }
+    },
+    "cmake.configureOnOpen": false
     
 }

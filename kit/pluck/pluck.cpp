@@ -38,15 +38,14 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     samplerate = hw.AudioSampleRate();
     hw.ProcessDigitalControls();
     hw.ProcessAnalogControls();
+    // Handle Triggering the Plucks
+    trig = 0.0f;
+    if(hw.gate_in_1.Trig())
+        trig = 1.0f;
 
     // Synthesis.
     for(size_t i = 0; i < size; i++)
     {
-        // Handle Triggering the Plucks
-        trig = 0.0f;
-        if(hw.gate_in_1.Trig())
-            trig = 1.0f;
-
         // Set MIDI Note for new Pluck notes.
         nn = 24.0f + hw.controls[CV_1].Process() * 60.0f;
         nn = static_cast<int32_t>(nn); // Quantize to semitones
