@@ -1,9 +1,9 @@
 # Project Name
-TARGET = clouds
+TARGET = Nimbus
 
 # Sources
 CPP_SOURCES += \
-clouds.cpp \
+Nimbus.cpp \
 dsp/correlator.cpp \
 dsp/granular_processor.cpp \
 dsp/pvoc/frame_transformation.cpp \
@@ -12,8 +12,8 @@ dsp/pvoc/stft.cpp \
 resources.cpp \
 
 # Library Locations
-LIBDAISY_DIR = ../../libDaisy/
-DAISYSP_DIR = ../../DaisySP/
+LIBDAISY_DIR = ../../libDaisy
+DAISYSP_DIR = ../../DaisySP
 
 #C_SOURCES += \
 #$(LIBDAISY_DIR)/Drivers/CMSIS/DSP/Source/TransformFunctions/arm_rfft_fast_f32.c \
