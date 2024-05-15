@@ -23,9 +23,11 @@ using namespace daisysp;
  * - midi in for custom scales?
  */
 
-DaisyPatchSM   hw;
-Switch         updateTransposeRoot;
-ScaleQuantizer quantizer(kChromaticScale, DSY_COUNTOF(kChromaticScale));
+DaisyPatchSM hw;
+Switch       updateTransposeRoot;
+//ScaleQuantizer quantizer(kChromaticScale, DSY_COUNTOF(kChromaticScale));
+ScaleQuantizer quantizer(kPentatonic, DSY_COUNTOF(kPentatonic));
+//ScaleQuantizer quantizer(kMajorScale, DSY_COUNTOF(kMajorScale));
 
 struct State
 {
@@ -44,14 +46,16 @@ struct State
 State state;
 
 void Controls();
-void CvCallback(uint16_t **output, size_t size)
+void CvCallback()
 {
     hw.ProcessAllControls();
     Controls();
 
-    float inputNote = fmap(state.input, 0, 60);
-    float transposeNote
-        = fmap(state.transpose, 0, 60) - fmap(state.transposeRoot, 0, 60);
+    float inputNote = fmap(state.input, 0.0f, 60.0f);
+    /*
+    float transposeNote = fmap(state.transpose, 0.0f, 60.0f)
+                          - fmap(state.transposeRoot, 0.0f, 60.0f);
+    */
 
     float quantizedNote = quantizer.Process(inputNote);
     if(state.lastNote != quantizedNote)
@@ -59,11 +63,8 @@ void CvCallback(uint16_t **output, size_t size)
         state.hasNoteChanged++;
         state.lastNote = quantizedNote;
     }
-    float noteOut = fclamp(quantizedNote + transposeNote, 0.f, 127.f) / 127.0f;
-    for(size_t i = 0; i < size; i++)
-    {
-        output[0][i] = noteOut;
-    }
+    float noteOut = (fclamp(quantizedNote, 0.f, 60.f) / 60.0f) * 5.0f;
+    hw.WriteCvOut(CV_OUT_1, noteOut);
 }
 
 int main(void)
@@ -71,9 +72,12 @@ int main(void)
     hw.Init();
     hw.SetAudioBlockSize(4); // number of samples handled per callback
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
-    hw.StartDac(CvCallback);
+    //hw.StartDac(CvCallback);
+    int32_t triggerActive = -1;
     while(1)
     {
+        CvCallback();
+
         if(state.hasNoteChanged > 0)
         {
             // trigger out
@@ -94,7 +98,7 @@ void Controls()
     // convert to 0-1
     state.input     = (hw.controls[CV_1].Value() + 1.0f) * 0.5f;
     state.transpose = (hw.controls[CV_2].Value() + 1.0f) * 0.5f;
-    if(updateTransposeRoot.Pressed())
+    if(updateTransposeRoot.RisingEdge())
     {
         state.transposeRoot = state.transpose;
     }

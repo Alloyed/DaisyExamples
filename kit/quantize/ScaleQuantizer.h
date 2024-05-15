@@ -43,7 +43,7 @@ class ScaleQuantizer
         // if upper note is never set, wrap back around
         float upperNote = 12.0f + m_scale[0];
         float lowerNote = m_scale[0];
-        for(size_t noteIndex; noteIndex < m_numNotes; ++noteIndex)
+        for(size_t noteIndex = 0; noteIndex < m_numNotes; ++noteIndex)
         {
             if(m_scale[noteIndex] > withinOctaveNote)
             {
