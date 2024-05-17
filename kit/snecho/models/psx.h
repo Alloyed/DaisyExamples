@@ -88,6 +88,7 @@ class Model
                  float  inputRight,
                  float& outputLeft,
                  float& outputRight);
+    void ClearBuffer();
 
     static constexpr size_t GetBufferDesiredSizeFloats(int32_t sampleRate)
     {

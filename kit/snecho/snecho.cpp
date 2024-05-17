@@ -10,11 +10,13 @@ using namespace daisysp;
 
 #define SAMPLE_RATE 32000
 
-DaisyPatchSM     hw;
-SNES::Model      snes;
-constexpr size_t bufSize = PSX::Model::GetBufferDesiredSizeFloats(SAMPLE_RATE);
-float            psxBuffer[bufSize];
-PSX::Model       psx(SAMPLE_RATE, psxBuffer, sizeof(psxBuffer));
+DaisyPatchSM hw;
+
+int16_t     snesBuffer[SNES::Model::GetBufferDesiredSizeInt16s(SAMPLE_RATE)];
+SNES::Model snes(SAMPLE_RATE, snesBuffer, sizeof(snesBuffer));
+
+float      psxBuffer[PSX::Model::GetBufferDesiredSizeFloats(SAMPLE_RATE)];
+PSX::Model psx(SAMPLE_RATE, psxBuffer, sizeof(psxBuffer));
 
 void AudioCallback(AudioHandle::InputBuffer  in,
                    AudioHandle::OutputBuffer out,

@@ -230,8 +230,7 @@ PSX::Model::Model(int32_t sampleRate, float* buffer, size_t bufferSize)
     rev.spu_buffer = buffer;
 
     preset_load(rev, rev.preset);
-    rev.BufferAddress = 0;
-    memset(rev.spu_buffer, 0, rev.spu_buffer_count * sizeof(rev.spu_buffer[0]));
+    ClearBuffer();
 }
 
 void PSX::Model::Process(float  inputLeft,
@@ -299,4 +298,10 @@ void PSX::Model::Process(float  inputLeft,
     outputRight = Rout;
 
     rev.BufferAddress = ((rev.BufferAddress + 1) & rev.spu_buffer_count_mask);
+}
+
+void PSX::Model::ClearBuffer()
+{
+    rev.BufferAddress = 0;
+    memset(rev.spu_buffer, 0, rev.spu_buffer_count * sizeof(rev.spu_buffer[0]));
 }

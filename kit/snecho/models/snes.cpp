@@ -3,6 +3,7 @@
 #include <climits>
 #include <cstdint>
 #include <cstring>
+#include <cassert>
 
 /*
  * This is a rough transcription of the rules that govern the SNES's reverb/echo pathway, described here:
@@ -72,17 +73,20 @@ int16_t ProcessFIR(int16_t inSample)
     return S;
 }
 
-// per dev manual
-// Delay time o is an interval of 16 msec, and is variable within a range of 0 ~ 240 msec.
-#define MAX_ECHO_MS 240
-#define SAMPLES_PER_MS 32 // 32khz / 1000
-int16_t echoBuffer[MAX_ECHO_MS * SAMPLES_PER_MS];
-size_t  bufferIndex = 0;
+SNES::Model::Model(int32_t  _sampleRate,
+                   int16_t* _echoBuffer,
+                   size_t   _echoBufferSize)
+: echoBuffer(_echoBuffer), echoBufferSize(_echoBufferSize)
+{
+    assert(_sampleRate == 32000); // TODO: other sample rates
+    assert(_echoBufferSize == GetBufferDesiredSizeInt16s(_sampleRate));
+    ClearBuffer();
+}
 
-SNES::Model::Model()
+void SNES::Model::ClearBuffer()
 {
     memset(FIRBuffer, 0, sizeof(FIRBuffer) * sizeof(FIRBuffer[0]));
-    memset(echoBuffer, 0, sizeof(echoBuffer) * sizeof(echoBuffer[0]));
+    memset(echoBuffer, 0, echoBufferSize * sizeof(echoBuffer[0]));
 }
 
 void SNES::Model::Process(float  inputLeft,
