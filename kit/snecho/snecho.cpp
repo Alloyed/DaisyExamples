@@ -1,8 +1,8 @@
 #include "daisy_patch_sm.h"
 #include "daisysp.h"
 
-#include "models/snes.h"
-#include "models/psx.h"
+#include "dsp/snes.h"
+#include "dsp/psx.h"
 
 using namespace daisy;
 using namespace patch_sm;

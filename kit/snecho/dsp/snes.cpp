@@ -1,4 +1,4 @@
-#include "models/snes.h"
+#include "dsp/snes.h"
 
 #include <climits>
 #include <cstdint>

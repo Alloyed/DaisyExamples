@@ -1,6 +1,5 @@
 #pragma once
 
-
 namespace SNES
 {
 struct Config
