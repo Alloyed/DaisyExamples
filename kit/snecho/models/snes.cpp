@@ -4,6 +4,10 @@
 #include <cstdint>
 #include <cstring>
 #include <cassert>
+#include <algorithm>
+
+constexpr size_t FIR_TAPS
+    = 8; // hardcoded into the snes. not sure how sample rate affects this
 
 /*
  * This is a rough transcription of the rules that govern the SNES's reverb/echo pathway, described here:
@@ -37,11 +41,11 @@ DSP Mixer/Reverb Block Diagram (c=channel, L/R)
 */
 
 
-int16_t FIRBuffer[8];
+int16_t FIRBuffer[FIR_TAPS];
 
 // any coeffecients are allowed, but historically accurate coeffecients can be found here:
 // https://sneslab.net/wiki/FIR_Filter#Examples
-int16_t FIRCoeff[8] = {0x58, 0xBF, 0xDB, 0xF0, 0xFE, 0x07, 0x0C, 0x0C};
+int16_t FIRCoeff[] = {0x58, 0xBF, 0xDB, 0xF0, 0xFE, 0x07, 0x0C, 0x0C};
 
 int16_t ProcessFIR(int16_t inSample)
 {
@@ -78,37 +82,41 @@ SNES::Model::Model(int32_t  _sampleRate,
                    size_t   _echoBufferSize)
 : echoBuffer(_echoBuffer), echoBufferSize(_echoBufferSize)
 {
-    assert(_sampleRate == 32000); // TODO: other sample rates
-    assert(_echoBufferSize == GetBufferDesiredSizeInt16s(_sampleRate));
+    //assert(_sampleRate == 32000); // TODO: other sample rates
+    //assert(_echoBufferSize == GetBufferDesiredSizeInt16s(_sampleRate));
     ClearBuffer();
 }
 
 void SNES::Model::ClearBuffer()
 {
-    memset(FIRBuffer, 0, sizeof(FIRBuffer) * sizeof(FIRBuffer[0]));
+    memset(FIRBuffer, 0, FIR_TAPS * sizeof(FIRBuffer[0]));
     memset(echoBuffer, 0, echoBufferSize * sizeof(echoBuffer[0]));
 }
+
 
 void SNES::Model::Process(float  inputLeft,
                           float  inputRight,
                           float& outputLeft,
                           float& outputRight)
 {
-    float delay       = cfg.echoLength + mod.echoLength;
-    float feedback    = cfg.echoFeedback + mod.echoFeedback;
-    float wet         = cfg.wetDry + mod.wetDry;
+    float delay
+        = std::max(0.0f, std::min(1.0f, cfg.echoLength + mod.echoLength));
+    float feedback
+        = std::max(0.0f, std::min(0.9f, cfg.echoFeedback + mod.echoFeedback));
+    float wet         = std::max(0.0f, std::min(1.0f, cfg.wetDry + mod.wetDry));
     float firResponse = cfg.filter + mod.filter;
 
-    bufferIndex = (bufferIndex + 1) % sizeof(echoBuffer);
+    bufferIndex = (bufferIndex + 1) % echoBufferSize;
 
     (void)inputRight;
     float   inputFloat = inputLeft;
     int16_t inputNorm  = static_cast<int16_t>(inputFloat * INT16_MAX);
 
     // pull delayed sample
-    size_t  delayNumSamples = static_cast<size_t>(delay) % sizeof(echoBuffer);
+    size_t delayNumSamples
+        = static_cast<size_t>(delay * echoBufferSize) % echoBufferSize;
     int16_t delayedSample
-        = echoBuffer[(bufferIndex - delayNumSamples) % sizeof(echoBuffer)];
+        = echoBuffer[(bufferIndex - delayNumSamples) % echoBufferSize];
     int16_t filteredSample = ProcessFIR(delayedSample);
 
     // store current state in echo buffer /w feedback
@@ -117,7 +125,7 @@ void SNES::Model::Process(float  inputLeft,
           + static_cast<int16_t>(static_cast<float>(filteredSample) * feedback);
 
     float echoFloat   = static_cast<float>(filteredSample) / INT16_MAX;
-    float outputFloat = inputFloat * (1.0f - wet) + echoFloat * wet;
+    float outputFloat = (inputFloat * (1.0f - wet)) + (echoFloat * wet);
 
     outputLeft  = outputFloat;
     outputRight = outputFloat * -1.0f;
