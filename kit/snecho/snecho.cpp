@@ -8,7 +8,7 @@
 using namespace daisy;
 using namespace patch_sm;
 
-#define SAMPLE_RATE 96000
+#define SAMPLE_RATE 32000
 
 DaisyPatchSM hw;
 Switch       button, toggle;
@@ -31,6 +31,16 @@ float snesToPsxFade = 0.0f;
 // 10ms fade
 static constexpr float fadeRate = (10.0f / 1000.0f) / SAMPLE_RATE;
 
+float knobValue(int32_t cvEnum)
+{
+    return clampf(hw.controls[cvEnum].Value(), 0.0f, 1.0f);
+}
+
+float jackValue(int32_t cvEnum)
+{
+    return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
+}
+
 void AudioCallback(AudioHandle::InputBuffer  in,
                    AudioHandle::OutputBuffer out,
                    size_t                    size)
@@ -39,17 +49,17 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     button.Debounce();
     toggle.Debounce();
 
-    snes.cfg.echoLength   = hw.controls[CV_1].Value();
-    snes.mod.echoLength   = hw.controls[CV_5].Value();
-    snes.cfg.echoFeedback = hw.controls[CV_2].Value();
-    snes.mod.echoFeedback = hw.controls[CV_6].Value();
-    snes.cfg.filter       = hw.controls[CV_3].Value();
-    snes.mod.filter       = hw.controls[CV_7].Value();
+    snes.cfg.echoLength   = knobValue(CV_1);
+    snes.mod.echoLength   = jackValue(CV_5);
+    snes.cfg.echoFeedback = knobValue(CV_2);
+    snes.mod.echoFeedback = jackValue(CV_6);
+    snes.cfg.filter       = knobValue(CV_3);
+    snes.mod.filter       = jackValue(CV_7);
 
     // PSX has no parameters yet D:
 
-    float wetDry = clampf(
-        hw.controls[CV_4].Value() + hw.controls[CV_8].Value(), 0.0f, 1.0f);
+    float wetDry = clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
+    hw.WriteCvOut(2, 2.5 * wetDry);
 
     if(button.RisingEdge() || hw.gate_in_1.Trig())
     {
@@ -63,12 +73,16 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         if(toggle.Pressed() != hw.gate_in_2.State())
         {
             // fade to PSX
-            snesToPsxFade = clampf(snesToPsxFade + fadeRate, 0.0f, 1.0f);
+            //snesToPsxFade = clampf(snesToPsxFade + fadeRate, 0.0f, 1.0f);
+            snesToPsxFade = 1.0f;
+            //hw.WriteCvOut(2, 2.5);
         }
         else
         {
             // fade to SNES
-            snesToPsxFade = clampf(snesToPsxFade - fadeRate, 0.0f, 1.0f);
+            //snesToPsxFade = clampf(snesToPsxFade - fadeRate, 0.0f, 1.0f);
+            snesToPsxFade = 0.0f;
+            //hw.WriteCvOut(2, 0);
         }
 
         float snesLeft, snesRight, psxLeft, psxRight;
@@ -91,24 +105,20 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         float left  = fadeCpowf(snesLeft, psxLeft, snesToPsxFade);
         float right = fadeCpowf(snesRight, psxRight, snesToPsxFade);
 
-        OUT_L[i] = fadeCpowf(IN_L[i], left, wetDry);
-        OUT_R[i] = fadeCpowf(IN_R[i], right, wetDry);
+        OUT_L[i] = lerpf(IN_L[i], left, wetDry);
+        OUT_R[i] = lerpf(IN_R[i], right, wetDry);
     }
 }
 
 int main(void)
 {
     hw.Init();
-    hw.SetAudioBlockSize(2); // number of samples handled per callback
-    hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_96KHZ);
+    hw.SetAudioBlockSize(8); // number of samples handled per callback
+    hw.SetAudioSampleRate(SAMPLE_RATE);
 
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
 
     hw.StartAudio(AudioCallback);
-    while(1)
-    {
-        hw.SetLed(toggle.Pressed());
-        System::Delay(1);
-    }
+    while(1) {}
 }

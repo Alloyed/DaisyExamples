@@ -107,7 +107,8 @@ void SNES::Model::Process(float  inputLeft,
 
     int16_t delayedSample
         = mEchoBuffer[(mBufferIndex - delayNumSamples) % mEchoBufferSize];
-    int16_t filteredSample = ProcessFIR(delayedSample);
+    //int16_t filteredSample = ProcessFIR(delayedSample);
+    int16_t filteredSample = delayedSample;
 
     // store current state in echo buffer /w feedback
     mEchoBuffer[mBufferIndex]
