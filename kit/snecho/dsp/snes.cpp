@@ -101,7 +101,7 @@ void SNES::Model::Process(float  inputLeft,
     float   inputFloat = (inputLeft + inputRight) * 0.5f;
     int16_t inputNorm  = static_cast<int16_t>(inputFloat * INT16_MAX);
 
-    // TODO: delay value hysteresis
+    // TODO: hysteresis
     size_t delayNumSamples = static_cast<size_t>(
         roundTof(delay * mEchoBufferSize, kEchoIncrementSamples));
 
@@ -116,6 +116,8 @@ void SNES::Model::Process(float  inputLeft,
 
     float echoFloat = static_cast<float>(filteredSample) / INT16_MAX;
 
+    // The real SNES let you pick between inverting the right channel and not doing that.
+    // if you don't want it here, just use a mult on the left output ;)
     outputLeft  = echoFloat;
     outputRight = echoFloat * -1.0f;
 }

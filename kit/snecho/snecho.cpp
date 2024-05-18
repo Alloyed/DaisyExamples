@@ -30,13 +30,13 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     button.Debounce();
     toggle.Debounce();
 
-    // pot input and CV input are summed here (there isn't enough space on the panel for attenuators, unfortunately)
-    snes.cfg.echoLength = clampf(
-        hw.controls[CV_1].Value() + hw.controls[CV_5].Value(), 0.0f, 1.0f);
-    snes.cfg.echoFeedback = clampf(
-        hw.controls[CV_2].Value() + hw.controls[CV_6].Value(), 0.0f, 1.0f);
-    snes.cfg.filter = clampf(
-        hw.controls[CV_3].Value() + hw.controls[CV_7].Value(), 0.0f, 1.0f);
+    snes.cfg.echoLength   = hw.controls[CV_1].Value();
+    snes.mod.echoLength   = hw.controls[CV_5].Value();
+    snes.cfg.echoFeedback = hw.controls[CV_2].Value();
+    snes.mod.echoFeedback = hw.controls[CV_6].Value();
+    snes.cfg.filter       = hw.controls[CV_3].Value();
+    snes.mod.filter       = hw.controls[CV_7].Value();
+
     float wetDry = clampf(
         hw.controls[CV_4].Value() + hw.controls[CV_8].Value(), 0.0f, 1.0f);
 
