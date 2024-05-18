@@ -60,7 +60,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     for(size_t i = 0; i < size; i++)
     {
         // fade should take about 10ms
-        if(toggle.Pressed())
+        if(toggle.Pressed() != hw.gate_in_2.State())
         {
             // fade to PSX
             snesToPsxFade = clampf(snesToPsxFade + fadeRate, 0.0f, 1.0f);

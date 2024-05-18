@@ -25,5 +25,5 @@ In PSX mode:
 In Both:
 
 - CV 4 + CV 8 - Wet/Dry
-- BTN 7 / gate 1 - reset
-- BTN 8 - toggle between snes and psx mode
+- BTN 7 or gate 1 - (trigger) clear delay buffers
+- BTN 8 xor gate 2 - toggle between snes and psx mode
