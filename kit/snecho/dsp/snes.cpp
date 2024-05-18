@@ -1,4 +1,5 @@
 #include "dsp/snes.h"
+#include "dsp/util.h"
 
 #include <climits>
 #include <cstdint>
@@ -80,7 +81,7 @@ int16_t ProcessFIR(int16_t inSample)
 SNES::Model::Model(int32_t  _sampleRate,
                    int16_t* _echoBuffer,
                    size_t   _echoBufferSize)
-: echoBuffer(_echoBuffer), echoBufferSize(_echoBufferSize)
+: mEchoBuffer(_echoBuffer), mEchoBufferSize(_echoBufferSize)
 {
     //assert(_sampleRate == 32000); // TODO: other sample rates
     //assert(_echoBufferSize == GetBufferDesiredSizeInt16s(_sampleRate));
@@ -90,7 +91,7 @@ SNES::Model::Model(int32_t  _sampleRate,
 void SNES::Model::ClearBuffer()
 {
     memset(FIRBuffer, 0, FIR_TAPS * sizeof(FIRBuffer[0]));
-    memset(echoBuffer, 0, echoBufferSize * sizeof(echoBuffer[0]));
+    memset(mEchoBuffer, 0, mEchoBufferSize * sizeof(mEchoBuffer[0]));
 }
 
 
@@ -99,34 +100,31 @@ void SNES::Model::Process(float  inputLeft,
                           float& outputLeft,
                           float& outputRight)
 {
-    float delay
-        = std::max(0.0f, std::min(1.0f, cfg.echoLength + mod.echoLength));
-    float feedback
-        = std::max(0.0f, std::min(0.9f, cfg.echoFeedback + mod.echoFeedback));
-    float wet         = std::max(0.0f, std::min(1.0f, cfg.wetDry + mod.wetDry));
+    float delay       = clampf(cfg.echoLength + mod.echoLength, 0.0f, 1.0f);
+    float feedback    = clampf(cfg.echoFeedback + mod.echoFeedback, 0.0f, 1.0f);
     float firResponse = cfg.filter + mod.filter;
 
-    bufferIndex = (bufferIndex + 1) % echoBufferSize;
+    mBufferIndex = (mBufferIndex + 1) % mEchoBufferSize;
 
-    (void)inputRight;
-    float   inputFloat = inputLeft;
+    // summing mixdown. if right is normalled to left, acts as a mono signal.
+    float   inputFloat = (inputLeft + inputRight) * 0.5f;
     int16_t inputNorm  = static_cast<int16_t>(inputFloat * INT16_MAX);
 
-    // pull delayed sample
-    size_t delayNumSamples
-        = static_cast<size_t>(delay * echoBufferSize) % echoBufferSize;
+    // TODO: delay value hysteresis
+    size_t delayNumSamples = static_cast<size_t>(
+        roundTof(delay * mEchoBufferSize, kEchoIncrementSamples));
+
     int16_t delayedSample
-        = echoBuffer[(bufferIndex - delayNumSamples) % echoBufferSize];
+        = mEchoBuffer[(mBufferIndex - delayNumSamples) % mEchoBufferSize];
     int16_t filteredSample = ProcessFIR(delayedSample);
 
     // store current state in echo buffer /w feedback
-    echoBuffer[bufferIndex]
+    mEchoBuffer[mBufferIndex]
         = inputNorm
           + static_cast<int16_t>(static_cast<float>(filteredSample) * feedback);
 
-    float echoFloat   = static_cast<float>(filteredSample) / INT16_MAX;
-    float outputFloat = (inputFloat * (1.0f - wet)) + (echoFloat * wet);
+    float echoFloat = static_cast<float>(filteredSample) / INT16_MAX;
 
-    outputLeft  = outputFloat;
-    outputRight = outputFloat * -1.0f;
+    outputLeft  = echoFloat;
+    outputRight = echoFloat * -1.0f;
 }

@@ -4,12 +4,13 @@ TARGET = snecho
 # Sources
 CPP_SOURCES += \
 snecho.cpp \
-models/snes.cpp \
-models/psx.cpp \
+dsp/snes.cpp \
+dsp/psx.cpp \
+dsp/resampler.cpp \
 
 C_INCLUDES += \
 -I. \
--Imodels \
+-Idsp \
 
 # Library Locations
 LIBDAISY_DIR = ../../libDaisy/

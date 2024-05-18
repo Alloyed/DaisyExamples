@@ -1,12 +1,11 @@
 #include "daisy_patch_sm.h"
-#include "daisysp.h"
 
 #include "dsp/snes.h"
 #include "dsp/psx.h"
+#include "dsp/util.h"
 
 using namespace daisy;
 using namespace patch_sm;
-using namespace daisysp;
 
 #define SAMPLE_RATE 32000
 
@@ -31,11 +30,17 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     button.Debounce();
     toggle.Debounce();
 
-    snes.cfg.echoLength   = hw.controls[CV_1].Value();
-    snes.cfg.echoFeedback = hw.controls[CV_2].Value();
-    snes.cfg.wetDry       = hw.controls[CV_3].Value();
-    snes.cfg.filter       = hw.controls[CV_4].Value();
-    if(button.RisingEdge())
+    // pot input and CV input are summed here (there isn't enough space on the panel for attenuators, unfortunately)
+    snes.cfg.echoLength = clampf(
+        hw.controls[CV_1].Value() + hw.controls[CV_5].Value(), 0.0f, 1.0f);
+    snes.cfg.echoFeedback = clampf(
+        hw.controls[CV_2].Value() + hw.controls[CV_6].Value(), 0.0f, 1.0f);
+    snes.cfg.filter = clampf(
+        hw.controls[CV_3].Value() + hw.controls[CV_7].Value(), 0.0f, 1.0f);
+    float wetDry = clampf(
+        hw.controls[CV_4].Value() + hw.controls[CV_8].Value(), 0.0f, 1.0f);
+
+    if(button.RisingEdge() || hw.gate_in_1.Trig())
     {
         snes.ClearBuffer();
         psx.ClearBuffer();
@@ -43,22 +48,26 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 
     for(size_t i = 0; i < size; i++)
     {
+        float left;
+        float right;
         // TODO: crossfade on toggle
         if(toggle.Pressed())
         {
-            psx.Process(IN_L[i], IN_R[i], OUT_L[i], OUT_R[i]);
+            psx.Process(IN_L[i], IN_R[i], left, right);
         }
         else
         {
-            snes.Process(IN_L[i], IN_R[i], OUT_L[i], OUT_R[i]);
+            snes.Process(IN_L[i], IN_R[i], left, right);
         }
+        OUT_L[i] = fadeCpowf(IN_L[i], left, wetDry);
+        OUT_R[i] = fadeCpowf(IN_R[i], right, wetDry);
     }
 }
 
 int main(void)
 {
     hw.Init();
-    hw.SetAudioBlockSize(8); // number of samples handled per callback
+    hw.SetAudioBlockSize(2); // number of samples handled per callback
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_32KHZ);
 
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());

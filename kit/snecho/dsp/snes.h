@@ -7,7 +7,6 @@ struct Config
     float echoLength;
     float echoFeedback;
     float filter;
-    float wetDry;
 };
 
 struct Modulations
@@ -15,9 +14,10 @@ struct Modulations
     float echoLength;
     float echoFeedback;
     float filter;
-    float wetDry;
 };
-static constexpr int32_t maxEchoMs = 240;
+static constexpr int32_t kMaxEchoMs = 240;
+// snap to 16ms increments, 16 * 32000 / 1000
+static constexpr int32_t kEchoIncrementSamples = 512;
 
 class Model
 {
@@ -30,7 +30,7 @@ class Model
 
     static constexpr size_t GetBufferDesiredSizeInt16s(int32_t sampleRate)
     {
-        return maxEchoMs * (sampleRate / 1000);
+        return kMaxEchoMs * (sampleRate / 1000);
     }
 
     void ClearBuffer();
@@ -39,9 +39,9 @@ class Model
     Modulations mod;
 
   private:
-    int16_t* echoBuffer;
-    size_t   echoBufferSize;
-    size_t   bufferIndex = 0;
+    int16_t* mEchoBuffer;
+    size_t   mEchoBufferSize;
+    size_t   mBufferIndex = 0;
     int16_t  FIRBuffer[8];
     // any coeffecients are allowed, but historically accurate coeffecients can be found here:
     // https://sneslab.net/wiki/FIR_Filter#Examples

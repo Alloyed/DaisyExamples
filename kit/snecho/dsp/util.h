@@ -20,3 +20,8 @@ inline constexpr float fadeCpowf(float a, float b, float t)
     float scalar_2 = sinf((1.0f - t) * cHalfPi);
     return (a * scalar_2) + (b * scalar_1);
 }
+
+inline constexpr float roundTof(float in, float increment)
+{
+    return static_cast<int32_t>(0.5 + (in / increment)) * increment;
+}
