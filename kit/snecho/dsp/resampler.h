@@ -14,9 +14,12 @@ class Resampler
                  float& outputRight,
                  F&&    callback)
     {
-        if(true)
+        // No anti-aliasing applied, just run the callback at a different rate
+        mSampleCounter += 1.0f;
+        while(mSampleCounter > mPeriod)
         {
             callback(inputLeft, inputRight, mLastOutputLeft, mLastOutputRight);
+            mSampleCounter -= mPeriod;
         }
         outputLeft  = mLastOutputLeft;
         outputRight = mLastOutputRight;
@@ -25,4 +28,6 @@ class Resampler
   private:
     float mLastOutputLeft;
     float mLastOutputRight;
+    float mSampleCounter;
+    float mPeriod;
 };

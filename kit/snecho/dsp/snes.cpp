@@ -74,7 +74,7 @@ SNES::Model::Model(int32_t  _sampleRate,
                    size_t   _echoBufferSize)
 : mEchoBuffer(_echoBuffer), mEchoBufferSize(_echoBufferSize)
 {
-    //assert(_sampleRate == 32000); // TODO: other sample rates
+    //assert(_sampleRate == kOriginalSampleRate); // TODO: other sample rates
     //assert(_echoBufferSize == GetBufferDesiredSizeInt16s(_sampleRate));
     ClearBuffer();
 }

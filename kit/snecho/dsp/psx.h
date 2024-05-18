@@ -16,7 +16,6 @@ static constexpr uint32_t ceilpower2(uint32_t x)
     return x;
 }
 
-#define SPU_REV_RATE 22050
 #define SPU_REV_PRESET_LONGEST_COUNT (0x18040 / 2)
 
 typedef struct
@@ -72,13 +71,13 @@ namespace PSX
 struct Config
 {
     int16_t preset;
-    float   wetDry;
 };
 
 struct Modulations
 {
-    float wetDry;
 };
+
+static constexpr int32_t kOriginalSampleRate = 22050;
 
 class Model
 {
@@ -93,7 +92,7 @@ class Model
     static constexpr size_t GetBufferDesiredSizeFloats(int32_t sampleRate)
     {
         return ceilpower2((uint32_t)ceil(SPU_REV_PRESET_LONGEST_COUNT
-                                         * (sampleRate / SPU_REV_RATE)));
+                                         * (sampleRate / kOriginalSampleRate)));
     }
 
     Config      cfg;

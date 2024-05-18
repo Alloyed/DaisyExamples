@@ -173,15 +173,15 @@ static void preset_load(PsxReverb& psx_rev, int preset_index)
     // even if loading preset fails, set the ID regardless so we don't get log spam
     psx_rev.preset = preset_index;
 
-    float stretch_factor = psx_rev.rate / SPU_REV_RATE;
+    float stretch_factor = psx_rev.rate / PSX::kOriginalSampleRate;
 
     PsxReverbPreset* preset = (PsxReverbPreset*)&presets[psx_rev.preset];
 
     psx_rev.dAPF1 = (uint32_t)((preset->dAPF1 << 2) * stretch_factor);
     psx_rev.dAPF2 = (uint32_t)((preset->dAPF2 << 2) * stretch_factor);
     // correct 22050 Hz IIR alpha to our actual rate
-    psx_rev.vIIR
-        = fc2alpha(alpha2fc(s2f(preset->vIIR), SPU_REV_RATE), psx_rev.rate);
+    psx_rev.vIIR = fc2alpha(
+        alpha2fc(s2f(preset->vIIR), PSX::kOriginalSampleRate), psx_rev.rate);
     psx_rev.vCOMB1  = s2f(preset->vCOMB1);
     psx_rev.vCOMB2  = s2f(preset->vCOMB2);
     psx_rev.vCOMB3  = s2f(preset->vCOMB3);

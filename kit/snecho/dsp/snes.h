@@ -16,6 +16,9 @@ struct Modulations
     float filter;
 };
 
+// low sample rate for OG crunchiness
+static constexpr int32_t kOriginalSampleRate = 32000;
+// max echo depth
 static constexpr int32_t kMaxEchoMs = 240;
 // snap to 16ms increments, 16 * 32000 / 1000
 static constexpr int32_t kEchoIncrementSamples = 512;
