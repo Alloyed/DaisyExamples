@@ -7,9 +7,6 @@
 #include <cassert>
 #include <algorithm>
 
-constexpr size_t FIR_TAPS
-    = 8; // hardcoded into the snes. not sure how sample rate affects this
-
 /*
  * This is a rough transcription of the rules that govern the SNES's reverb/echo pathway, described here:
  * https://sneslab.net/wiki/FIR_Filter
@@ -42,35 +39,29 @@ DSP Mixer/Reverb Block Diagram (c=channel, L/R)
 */
 
 
-int16_t FIRBuffer[FIR_TAPS];
-
-// any coeffecients are allowed, but historically accurate coeffecients can be found here:
-// https://sneslab.net/wiki/FIR_Filter#Examples
-int16_t FIRCoeff[] = {0x58, 0xBF, 0xDB, 0xF0, 0xFE, 0x07, 0x0C, 0x0C};
-
-int16_t ProcessFIR(int16_t inSample)
+int16_t SNES::Model::ProcessFIR(int16_t inSample)
 {
     // update FIR buffer
     for(size_t i = 0; i < 6; ++i)
     {
-        FIRBuffer[i] = FIRBuffer[i + 1];
+        mFIRBuffer[i] = mFIRBuffer[i + 1];
     }
-    FIRBuffer[7] = inSample;
+    mFIRBuffer[7] = inSample;
 
     // update FIR coeffs
 
     // apply first 7 taps
-    int16_t S = (FIRCoeff[0] * FIRBuffer[0] >> 6)
-                + (FIRCoeff[1] * FIRBuffer[1] >> 6)
-                + (FIRCoeff[2] * FIRBuffer[2] >> 6)
-                + (FIRCoeff[3] * FIRBuffer[3] >> 6)
-                + (FIRCoeff[4] * FIRBuffer[4] >> 6)
-                + (FIRCoeff[5] * FIRBuffer[5] >> 6)
-                + (FIRCoeff[6] * FIRBuffer[6] >> 6);
+    int16_t S = (mFIRCoeff[0] * mFIRBuffer[0] >> 6)
+                + (mFIRCoeff[1] * mFIRBuffer[1] >> 6)
+                + (mFIRCoeff[2] * mFIRBuffer[2] >> 6)
+                + (mFIRCoeff[3] * mFIRBuffer[3] >> 6)
+                + (mFIRCoeff[4] * mFIRBuffer[4] >> 6)
+                + (mFIRCoeff[5] * mFIRBuffer[5] >> 6)
+                + (mFIRCoeff[6] * mFIRBuffer[6] >> 6);
     // Clip
     S = S & 0xFFFF;
     // Apply last tap
-    S = S + (FIRCoeff[7] * FIRBuffer[7] >> 6);
+    S = S + (mFIRCoeff[7] * mFIRBuffer[7] >> 6);
 
     // Clamp
     S = S > 32767 ? 32767 : S;
@@ -90,7 +81,7 @@ SNES::Model::Model(int32_t  _sampleRate,
 
 void SNES::Model::ClearBuffer()
 {
-    memset(FIRBuffer, 0, FIR_TAPS * sizeof(FIRBuffer[0]));
+    memset(mFIRBuffer, 0, kFIRTaps * sizeof(mFIRBuffer[0]));
     memset(mEchoBuffer, 0, mEchoBufferSize * sizeof(mEchoBuffer[0]));
 }
 
