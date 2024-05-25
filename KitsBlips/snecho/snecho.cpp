@@ -49,8 +49,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     button.Debounce();
     toggle.Debounce();
 
-    snes.cfg.echoLength   = knobValue(CV_1);
-    snes.mod.echoLength   = jackValue(CV_5);
+    snes.cfg.echoDelayMod = knobValue(CV_1);
+    snes.mod.echoDelayMod = jackValue(CV_5);
     snes.cfg.echoFeedback = knobValue(CV_2);
     snes.mod.echoFeedback = jackValue(CV_6);
     snes.cfg.filter       = knobValue(CV_3);
