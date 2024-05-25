@@ -12,54 +12,14 @@ SdmmcHandler    sdcard;
 FatFSInterface  fsInterface;
 VoctCalibration calibration1;
 
-/* loads each sample as a one-shot, triggered by gate inputs.*/
-class TriggerSampler
-{
-  public:
-    TriggerSampler() {}
-    ~TriggerSampler() {}
-
-    void Load(const char* filename, GateIn gateIn)
-    {
-        loader.LoadSync(filename, m_sample);
-        m_gate = gateIn;
-    }
-
-    float Process()
-    {
-        if(m_gate.Trig())
-        {
-            m_playing         = true;
-            m_nextSampleIndex = 0;
-        }
-
-        if(!m_playing)
-        {
-            return 0.0f;
-        }
-        float sample = m_sample.data[m_nextSampleIndex];
-        m_nextSampleIndex++;
-        if(m_nextSampleIndex >= m_sample.length)
-        {
-            m_playing = false;
-        }
-        return sample;
-    }
-
-  private:
-    WaveData m_sample;
-    GateIn   m_gate;
-    bool     m_playing;
-    size_t   m_nextSampleIndex;
-};
-
 enum class InterpolationMode
 {
     Floor,  // always pick the last sample
     Linear, // assume a line in between the last sample and the next
 };
 
-/* loads a single sample and pitches it up and down to match 1v/oct.
+/**
+ * loads a single sample and pitches it up and down to match 1v/oct.
  * a slight volume envelope is applied: lowering the gate will stop the sample.
  */
 template <InterpolationMode mode>
@@ -154,22 +114,6 @@ class PitchSampler
     float         m_baseFreq;
 };
 
-/*
- * loads a single sample and pitches it up and down to match 1v/oct.
- * always loops, phase is never reset.
- */
-class OscSampler
-{
-  public:
-    OscSampler() {}
-    ~OscSampler() {}
-
-    void Load(const char* folder) {}
-
-    float    Process() { return 0.0f; }
-    WaveData m_wavetable;
-};
-
 enum ADCChannels
 {
     PitchCv,
@@ -202,10 +146,9 @@ int main(void)
     hw.SetAudioBlockSize(4); // number of samples handled per callback
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
 
-
     // configure channels
-    sampler1.Load("/sample1.wav", hw.gate_in_1, hw.controls[CV_1]);
-    sampler2.Load("/sample1.wav", hw.gate_in_2, hw.controls[CV_2]);
+    sampler1.Load("/sample1.wav", hw.gate_in_1, hw.controls[CV_5]);
+    sampler2.Load("/sample1.wav", hw.gate_in_2, hw.controls[CV_6]);
 
     // main loop
     hw.StartAudio(

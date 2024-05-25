@@ -15,7 +15,7 @@ struct WaveData
  ** it's imported. 
  **
  ** A internal 4kB workspace is used for reading from the file, and conveting to the correct memory location. 
- ** */
+ **/
 class WaveLoader
 {
   public:
