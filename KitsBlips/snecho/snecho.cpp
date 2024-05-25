@@ -49,12 +49,13 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     button.Debounce();
     toggle.Debounce();
 
-    snes.cfg.echoDelayMod = knobValue(CV_1);
-    snes.mod.echoDelayMod = jackValue(CV_5);
-    snes.cfg.echoFeedback = knobValue(CV_2);
-    snes.mod.echoFeedback = jackValue(CV_6);
-    snes.cfg.filter       = knobValue(CV_3);
-    snes.mod.filter       = jackValue(CV_7);
+    snes.cfg.echoBufferSize = knobValue(CV_1);
+    snes.mod.echoBufferSize = jackValue(CV_5);
+    snes.cfg.echoDelayMod   = 1.0f; // TODO
+    snes.cfg.echoFeedback   = knobValue(CV_2);
+    snes.mod.echoFeedback   = jackValue(CV_6);
+    snes.cfg.filter         = knobValue(CV_3);
+    snes.mod.filter         = jackValue(CV_7);
 
     // PSX has no parameters yet D:
 
