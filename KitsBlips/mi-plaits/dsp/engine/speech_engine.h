@@ -8,10 +8,10 @@
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-// 
+//
 // See http://creativecommons.org/licenses/MIT/ for more information.
 //
 // -----------------------------------------------------------------------------
@@ -31,51 +31,52 @@
 
 #include "stmlib/dsp/hysteresis_quantizer.h"
 
-#include "plaits/dsp/engine/engine.h"
-#include "plaits/dsp/speech/lpc_speech_synth_controller.h"
-#include "plaits/dsp/speech/naive_speech_synth.h"
-#include "plaits/dsp/speech/sam_speech_synth.h"
+#include "mi-plaits/dsp/engine/engine.h"
+#include "mi-plaits/dsp/speech/lpc_speech_synth_controller.h"
+#include "mi-plaits/dsp/speech/naive_speech_synth.h"
+#include "mi-plaits/dsp/speech/sam_speech_synth.h"
 
-namespace plaits {
+namespace plaits
+{
 
-class SpeechEngine : public Engine {
- public:
-  SpeechEngine() { }
-  ~SpeechEngine() { }
-  
-  virtual void Init(stmlib::BufferAllocator* allocator);
-  virtual void Reset();
-  virtual void LoadUserData(const uint8_t* user_data) { }
-  virtual void Render(const EngineParameters& parameters,
-      float* out,
-      float* aux,
-      size_t size,
-      bool* already_enveloped);
-  
-  inline void set_prosody_amount(float prosody_amount) {
-    prosody_amount_ = prosody_amount;
-  }
-  
-  inline void set_speed(float speed) {
-    speed_ = speed;
-  }
+class SpeechEngine : public Engine
+{
+  public:
+    SpeechEngine() {}
+    ~SpeechEngine() {}
 
- private:
-  stmlib::HysteresisQuantizer2 word_bank_quantizer_;
-  
-  NaiveSpeechSynth naive_speech_synth_;
-  SAMSpeechSynth sam_speech_synth_;
-  
-  LPCSpeechSynthController lpc_speech_synth_controller_;
-  LPCSpeechSynthWordBank lpc_speech_synth_word_bank_;
-  
-  float* temp_buffer_[2];
-  float prosody_amount_;
-  float speed_;
-  
-  DISALLOW_COPY_AND_ASSIGN(SpeechEngine);
+    virtual void Init(stmlib::BufferAllocator* allocator);
+    virtual void Reset();
+    virtual void LoadUserData(const uint8_t* user_data) {}
+    virtual void Render(const EngineParameters& parameters,
+                        float*                  out,
+                        float*                  aux,
+                        size_t                  size,
+                        bool*                   already_enveloped);
+
+    inline void set_prosody_amount(float prosody_amount)
+    {
+        prosody_amount_ = prosody_amount;
+    }
+
+    inline void set_speed(float speed) { speed_ = speed; }
+
+  private:
+    stmlib::HysteresisQuantizer2 word_bank_quantizer_;
+
+    NaiveSpeechSynth naive_speech_synth_;
+    SAMSpeechSynth   sam_speech_synth_;
+
+    LPCSpeechSynthController lpc_speech_synth_controller_;
+    LPCSpeechSynthWordBank   lpc_speech_synth_word_bank_;
+
+    float* temp_buffer_[2];
+    float  prosody_amount_;
+    float  speed_;
+
+    DISALLOW_COPY_AND_ASSIGN(SpeechEngine);
 };
 
-}  // namespace plaits
+} // namespace plaits
 
-#endif  // PLAITS_DSP_ENGINE_SPEECH_ENGINE_H_
+#endif // PLAITS_DSP_ENGINE_SPEECH_ENGINE_H_

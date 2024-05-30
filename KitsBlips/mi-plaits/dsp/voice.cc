@@ -26,8 +26,8 @@
 //
 // Main synthesis voice.
 
-#include "plaits/dsp/voice.h"
-//#include "plaits/user_data.h"
+#include "mi-plaits/dsp/voice.h"
+//#include "mi-plaits/user_data.h"
 
 namespace plaits
 {

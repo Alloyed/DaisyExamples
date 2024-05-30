@@ -23,11 +23,10 @@ plaits::Voice::Frame voiceFrames[cBlockSize];
 
 class Interface
 {
+  public:
     void UpdatePatch()
     {
-        button.debounce();
-        toggle.debounce();
-        if(button.rising_edge())
+        if(button.RisingEdge())
         {
             // next engine
             patch.engine = (patch.engine + 1) % plaits::kMaxEngines;
@@ -79,7 +78,10 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    size_t                    size)
 {
     hw.ProcessAllControls();
-    interface.UpdateAudio();
+    button.Debounce();
+    toggle.Debounce();
+    interface.UpdatePatch();
+    interface.UpdateModulations();
 
     voice.Render(patch, modulations, voiceFrames, size);
     for(size_t i = 0; i < size; i++)
@@ -98,8 +100,5 @@ int main(void)
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
     hw.StartAudio(AudioCallback);
-    while(1)
-    {
-        interface.UpdateInterface();
-    }
+    while(1) {}
 }

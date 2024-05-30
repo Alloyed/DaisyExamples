@@ -8,10 +8,10 @@
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-// 
+//
 // See http://creativecommons.org/licenses/MIT/ for more information.
 //
 // -----------------------------------------------------------------------------
@@ -29,36 +29,38 @@
 #ifndef PLAITS_DSP_ENGINE_PARTICLE_ENGINE_H_
 #define PLAITS_DSP_ENGINE_PARTICLE_ENGINE_H_
 
-#include "plaits/dsp/engine/engine.h"
-#include "plaits/dsp/fx/diffuser.h"
-#include "plaits/dsp/noise/particle.h"
+#include "mi-plaits/dsp/engine/engine.h"
+#include "mi-plaits/dsp/fx/diffuser.h"
+#include "mi-plaits/dsp/noise/particle.h"
 
-namespace plaits {
+namespace plaits
+{
 
 const int kNumParticles = 6;
 
-class ParticleEngine : public Engine {
- public:
-  ParticleEngine() { }
-  ~ParticleEngine() { }
-  
-  virtual void Init(stmlib::BufferAllocator* allocator);
-  virtual void Reset();
-  virtual void LoadUserData(const uint8_t* user_data) { }
-  virtual void Render(const EngineParameters& parameters,
-      float* out,
-      float* aux,
-      size_t size,
-      bool* already_enveloped);
+class ParticleEngine : public Engine
+{
+  public:
+    ParticleEngine() {}
+    ~ParticleEngine() {}
 
- private:
-  Particle particle_[kNumParticles];
-  Diffuser diffuser_;
-  stmlib::Svf post_filter_;
-  
-  DISALLOW_COPY_AND_ASSIGN(ParticleEngine);
+    virtual void Init(stmlib::BufferAllocator* allocator);
+    virtual void Reset();
+    virtual void LoadUserData(const uint8_t* user_data) {}
+    virtual void Render(const EngineParameters& parameters,
+                        float*                  out,
+                        float*                  aux,
+                        size_t                  size,
+                        bool*                   already_enveloped);
+
+  private:
+    Particle    particle_[kNumParticles];
+    Diffuser    diffuser_;
+    stmlib::Svf post_filter_;
+
+    DISALLOW_COPY_AND_ASSIGN(ParticleEngine);
 };
 
-}  // namespace plaits
+} // namespace plaits
 
-#endif  // PLAITS_DSP_ENGINE_PARTICLE_ENGINE_H_
+#endif // PLAITS_DSP_ENGINE_PARTICLE_ENGINE_H_

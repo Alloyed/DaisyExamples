@@ -8,10 +8,10 @@
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-// 
+//
 // See http://creativecommons.org/licenses/MIT/ for more information.
 //
 // -----------------------------------------------------------------------------
@@ -30,34 +30,36 @@
 #ifndef PLAITS_DSP_ENGINE_HI_HAT_ENGINE_H_
 #define PLAITS_DSP_ENGINE_HI_HAT_ENGINE_H_
 
-#include "plaits/dsp/drums/hi_hat.h"
-#include "plaits/dsp/engine/engine.h"
+#include "mi-plaits/dsp/drums/hi_hat.h"
+#include "mi-plaits/dsp/engine/engine.h"
 
-namespace plaits {
-  
-class HiHatEngine : public Engine {
- public:
-  HiHatEngine() { }
-  ~HiHatEngine() { }
-  
-  virtual void Init(stmlib::BufferAllocator* allocator);
-  virtual void Reset();
-  virtual void LoadUserData(const uint8_t* user_data) { }
-  virtual void Render(const EngineParameters& parameters,
-      float* out,
-      float* aux,
-      size_t size,
-      bool* already_enveloped);
+namespace plaits
+{
 
- private:
-  HiHat<SquareNoise, SwingVCA, true, false> hi_hat_1_;
-  HiHat<RingModNoise, LinearVCA, false, true> hi_hat_2_;
-  
-  float* temp_buffer_;
-  
-  DISALLOW_COPY_AND_ASSIGN(HiHatEngine);
+class HiHatEngine : public Engine
+{
+  public:
+    HiHatEngine() {}
+    ~HiHatEngine() {}
+
+    virtual void Init(stmlib::BufferAllocator* allocator);
+    virtual void Reset();
+    virtual void LoadUserData(const uint8_t* user_data) {}
+    virtual void Render(const EngineParameters& parameters,
+                        float*                  out,
+                        float*                  aux,
+                        size_t                  size,
+                        bool*                   already_enveloped);
+
+  private:
+    HiHat<SquareNoise, SwingVCA, true, false>   hi_hat_1_;
+    HiHat<RingModNoise, LinearVCA, false, true> hi_hat_2_;
+
+    float* temp_buffer_;
+
+    DISALLOW_COPY_AND_ASSIGN(HiHatEngine);
 };
 
-}  // namespace plaits
+} // namespace plaits
 
-#endif  // PLAITS_DSP_ENGINE_HI_HAT_ENGINE_H_
+#endif // PLAITS_DSP_ENGINE_HI_HAT_ENGINE_H_

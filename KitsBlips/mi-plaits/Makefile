@@ -1,5 +1,5 @@
 # Project Name
-TARGET = plaits
+TARGET = mi-plaits
 
 # Needed because we are overbudget
 APP_TYPE = BOOT_SRAM

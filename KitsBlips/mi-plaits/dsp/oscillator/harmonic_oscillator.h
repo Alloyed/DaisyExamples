@@ -8,10 +8,10 @@
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +19,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-// 
+//
 // See http://creativecommons.org/licenses/MIT/ for more information.
 //
 // -----------------------------------------------------------------------------
@@ -34,87 +34,101 @@
 #include "stmlib/dsp/dsp.h"
 #include "stmlib/dsp/parameter_interpolator.h"
 
-#include "plaits/dsp/oscillator/sine_oscillator.h"
+#include "mi-plaits/dsp/oscillator/sine_oscillator.h"
 
-namespace plaits {
+namespace plaits
+{
 
-template<int num_harmonics>
-class HarmonicOscillator {
- public:
-  HarmonicOscillator() { }
-  ~HarmonicOscillator() { }
+template <int num_harmonics>
+class HarmonicOscillator
+{
+  public:
+    HarmonicOscillator() {}
+    ~HarmonicOscillator() {}
 
-  void Init() {
-    phase_ = 0.0f;
-    frequency_ = 0.0f;
-    for (int i = 0; i < num_harmonics; ++i) {
-      amplitude_[i] = 0.0f;
-    }
-  }
-  
-  template<int first_harmonic_index>
-  void Render(
-      float frequency,
-      const float* amplitudes,
-      float* out,
-      size_t size) {
-    if (frequency >= 0.5f) {
-      frequency = 0.5f;
-    }
-    
-    stmlib::ParameterInterpolator am[num_harmonics];
-    stmlib::ParameterInterpolator fm(&frequency_, frequency, size);
-    
-    for (int i = 0; i < num_harmonics; ++i) {
-      float f = frequency * static_cast<float>(first_harmonic_index + i);
-      if (f >= 0.5f) {
-        f = 0.5f;
-      }
-      am[i].Init(&amplitude_[i], amplitudes[i] * (1.0f - f * 2.0f), size);
+    void Init()
+    {
+        phase_     = 0.0f;
+        frequency_ = 0.0f;
+        for(int i = 0; i < num_harmonics; ++i)
+        {
+            amplitude_[i] = 0.0f;
+        }
     }
 
-    while (size--) {
-      phase_ += fm.Next();
-      if (phase_ >= 1.0f) {
-        phase_ -= 1.0f;
-      }
-      const float two_x = 2.0f * SineNoWrap(phase_);
-      float previous, current;
-      if (first_harmonic_index == 1) {
-        previous = 1.0f;
-        current = two_x * 0.5f;
-      } else {
-        const float k = first_harmonic_index;
-        previous = Sine(phase_ * (k - 1.0f) + 0.25f);
-        current = Sine(phase_ * k);
-      }
-      
-      float sum = 0.0f;
-      for (int i = 0; i < num_harmonics; ++i) {
-        sum += am[i].Next() * current;
-        float temp = current;
-        current = two_x * current - previous;
-        previous = temp;
-      }
-      if (first_harmonic_index == 1) {
-        *out++ = sum;
-      } else {
-        *out++ += sum;
-      }
+    template <int first_harmonic_index>
+    void
+    Render(float frequency, const float* amplitudes, float* out, size_t size)
+    {
+        if(frequency >= 0.5f)
+        {
+            frequency = 0.5f;
+        }
+
+        stmlib::ParameterInterpolator am[num_harmonics];
+        stmlib::ParameterInterpolator fm(&frequency_, frequency, size);
+
+        for(int i = 0; i < num_harmonics; ++i)
+        {
+            float f = frequency * static_cast<float>(first_harmonic_index + i);
+            if(f >= 0.5f)
+            {
+                f = 0.5f;
+            }
+            am[i].Init(&amplitude_[i], amplitudes[i] * (1.0f - f * 2.0f), size);
+        }
+
+        while(size--)
+        {
+            phase_ += fm.Next();
+            if(phase_ >= 1.0f)
+            {
+                phase_ -= 1.0f;
+            }
+            const float two_x = 2.0f * SineNoWrap(phase_);
+            float       previous, current;
+            if(first_harmonic_index == 1)
+            {
+                previous = 1.0f;
+                current  = two_x * 0.5f;
+            }
+            else
+            {
+                const float k = first_harmonic_index;
+                previous      = Sine(phase_ * (k - 1.0f) + 0.25f);
+                current       = Sine(phase_ * k);
+            }
+
+            float sum = 0.0f;
+            for(int i = 0; i < num_harmonics; ++i)
+            {
+                sum += am[i].Next() * current;
+                float temp = current;
+                current    = two_x * current - previous;
+                previous   = temp;
+            }
+            if(first_harmonic_index == 1)
+            {
+                *out++ = sum;
+            }
+            else
+            {
+                *out++ += sum;
+            }
+        }
     }
-  }
 
- private:
-  // Oscillator state.
-  float phase_;
+  private:
+    // Oscillator state.
+    float phase_;
 
-  // For interpolation of parameters.
-  float frequency_;
-  float amplitude_[num_harmonics];
-  
-  DISALLOW_COPY_AND_ASSIGN(HarmonicOscillator);
+    // For interpolation of parameters.
+    float frequency_;
+    float amplitude_[num_harmonics];
+
+    DISALLOW_COPY_AND_ASSIGN(HarmonicOscillator);
 };
 
-}  // namespace plaits
+} // namespace plaits
 
-#endif  // PLAITS_DSP_OSCILLATOR_HARMONIC_OSCILLATOR_H_
+#endif // PLAITS_DSP_OSCILLATOR_HARMONIC_OSCILLATOR_H_
