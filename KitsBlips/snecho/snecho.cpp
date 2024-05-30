@@ -8,7 +8,6 @@
 using namespace daisy;
 using namespace patch_sm;
 
-#define SAMPLE_RATE 32000
 
 DaisyPatchSM hw;
 Switch       button, toggle;
@@ -17,19 +16,18 @@ constexpr size_t snesBufferSize
     = SNES::Model::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate);
 int16_t     snesBuffer[snesBufferSize];
 SNES::Model snes(SNES::kOriginalSampleRate, snesBuffer, snesBufferSize);
-Resampler   snesSampler(SNES::kOriginalSampleRate, SAMPLE_RATE);
+Resampler   snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
 
 constexpr size_t psxBufferSize
     = PSX::Model::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
 float      psxBuffer[psxBufferSize];
 PSX::Model psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
-Resampler  psxSampler(PSX::kOriginalSampleRate, SAMPLE_RATE);
+Resampler  psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
 
 // 1.0f == psx, 0.0f == SNES
 float snesToPsxFade = 0.0f;
 
 // 10ms fade
-static constexpr float fadeRate = (10.0f / 1000.0f) / SAMPLE_RATE;
 
 float knobValue(int32_t cvEnum)
 {
@@ -71,6 +69,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     for(size_t i = 0; i < size; i++)
     {
         // fade should take about 10ms
+        // static constexpr float fadeRate = (10.0f / 1000.0f) / SAMPLE_RATE;
         if(toggle.Pressed() != hw.gate_in_2.State())
         {
             // fade to PSX
@@ -103,8 +102,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
             [](float inLeft, float inRight, float &outLeft, float &outRight)
             { snes.Process(inLeft, inRight, outLeft, outRight); });
 
-        float left  = fadeCpowf(snesLeft, psxLeft, snesToPsxFade);
-        float right = fadeCpowf(snesRight, psxRight, snesToPsxFade);
+        float left  = lerpf(snesLeft, psxLeft, snesToPsxFade);
+        float right = lerpf(snesRight, psxRight, snesToPsxFade);
 
         OUT_L[i] = lerpf(IN_L[i], left, wetDry);
         OUT_R[i] = lerpf(IN_R[i], right, wetDry);
@@ -115,7 +114,9 @@ int main(void)
 {
     hw.Init();
     hw.SetAudioBlockSize(8); // number of samples handled per callback
-    hw.SetAudioSampleRate(SAMPLE_RATE);
+    hw.SetAudioSampleRate(48000.0f);
+    snesSampler = {SNES::kOriginalSampleRate, hw.AudioSampleRate()};
+    psxSampler  = {PSX::kOriginalSampleRate, hw.AudioSampleRate()};
 
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());

@@ -1,11 +1,12 @@
 #pragma once
 
+#include "dsp/util.h"
 #include <cstdint>
 
 class Resampler
 {
   public:
-    Resampler(int32_t sourceRate, int32_t targetRate);
+    Resampler(float sourceRate, float targetRate);
 
     template <typename F>
     void Process(float  inputLeft,
@@ -15,6 +16,12 @@ class Resampler
                  F&&    callback)
     {
         mSampleCounter += 1.0f;
+        if(mSampleCounter > mPeriod * 10000.0f)
+        {
+            // prevent extreme overrun scenarios
+            mSampleCounter = mPeriod;
+        }
+
         while(mSampleCounter > mPeriod)
         {
             // TODO: we should filter the inputs to avoid aliasing
@@ -35,10 +42,10 @@ class Resampler
     }
 
   private:
-    float mLastOutputLeft;
-    float mLastOutputRight;
-    float mNextOutputLeft;
-    float mNextOutputRight;
-    float mSampleCounter;
-    float mPeriod;
+    float mLastOutputLeft{};
+    float mLastOutputRight{};
+    float mNextOutputLeft{};
+    float mNextOutputRight{};
+    float mSampleCounter{};
+    float mPeriod{};
 };

@@ -51,7 +51,7 @@ int16_t SNES::Model::ProcessFIR(int16_t inSample)
     // update FIR coeffs
 
     // apply first 7 taps
-    int16_t S = (mFIRCoeff[0] * mFIRBuffer[0] >> 6)
+    int64_t S = (mFIRCoeff[0] * mFIRBuffer[0] >> 6)
                 + (mFIRCoeff[1] * mFIRBuffer[1] >> 6)
                 + (mFIRCoeff[2] * mFIRBuffer[2] >> 6)
                 + (mFIRCoeff[3] * mFIRBuffer[3] >> 6)
@@ -97,9 +97,11 @@ void SNES::Model::Process(float  inputLeft,
     float firResponse = clampf(cfg.filter + mod.filter, 0.0f, 1.0f);
 
     // TODO: hysteresis
-    size_t targetSizeSamples = static_cast<size_t>(
-        roundTof(targetSize * mEchoBufferCapacity, kEchoIncrementSamples));
-    mBufferIndex = (mBufferIndex + 1) % mEchoBufferSize;
+    size_t targetSizeSamples = static_cast<size_t>(clampf(
+        roundTof(targetSize * mEchoBufferCapacity, kEchoIncrementSamples),
+        kEchoIncrementSamples,
+        mEchoBufferCapacity));
+    mBufferIndex = mEchoBufferSize ? (mBufferIndex + 1) % mEchoBufferSize : 0;
 
     if(targetSizeSamples != mEchoBufferSize && mBufferIndex == 0)
     {
