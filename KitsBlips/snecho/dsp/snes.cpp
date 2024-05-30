@@ -8,14 +8,14 @@
 #include <algorithm>
 
 /*
- * This is a rough transcription of the rules that govern the SNES's reverb/echo pathway, described here:
- * https://sneslab.net/wiki/FIR_Filter
- * I found a reddit comment claiming that the snes chip and the PSX chip are the same, but this seems to severly contradict that:
- * https://psx-spx.consoledev.net/soundprocessingunitspu/#spu-reverb-formula
- */
+  This is a rough transcription of the rules that govern the SNES's reverb/echo pathway, references below:
 
-/*
+Thank you especially msx @heckscaper for providing extra info/examples
+https://sneslab.net/wiki/FIR_Filter
 https://problemkaputt.de/fullsnes.htm#snesaudioprocessingunitapu
+https://wiki.superfamicom.org/spc700-reference#dsp-echo-function-1511      
+https://www.youtube.com/watch?v=JC0PywZvKeg
+
 DSP Mixer/Reverb Block Diagram (c=channel, L/R)
   c0 --->| ADD    |                      |MVOLc| Master Volume   |     |
   c1 --->| Output |--------------------->| MUL |---------------->|     |
@@ -71,42 +71,52 @@ int16_t SNES::Model::ProcessFIR(int16_t inSample)
 
 SNES::Model::Model(int32_t  _sampleRate,
                    int16_t* _echoBuffer,
-                   size_t   _echoBufferSize)
-: mEchoBuffer(_echoBuffer), mEchoBufferSize(_echoBufferSize)
+                   size_t   _echoBufferCapacity)
+: mEchoBuffer(_echoBuffer), mEchoBufferCapacity(_echoBufferCapacity)
 {
     //assert(_sampleRate == kOriginalSampleRate); // TODO: other sample rates
-    //assert(_echoBufferSize == GetBufferDesiredSizeInt16s(_sampleRate));
+    //assert(_echoBufferCapacity == GetBufferDesiredSizeInt16s(_sampleRate));
     ClearBuffer();
 }
 
 void SNES::Model::ClearBuffer()
 {
     memset(mFIRBuffer, 0, kFIRTaps * sizeof(mFIRBuffer[0]));
-    memset(mEchoBuffer, 0, mEchoBufferSize * sizeof(mEchoBuffer[0]));
+    memset(mEchoBuffer, 0, mEchoBufferCapacity * sizeof(mEchoBuffer[0]));
 }
-
 
 void SNES::Model::Process(float  inputLeft,
                           float  inputRight,
                           float& outputLeft,
                           float& outputRight)
 {
-    float delay       = clampf(cfg.echoLength + mod.echoLength, 0.0f, 1.0f);
+    float targetSize
+        = clampf(cfg.echoBufferSize + mod.echoBufferSize, 0.0f, 1.0f);
+    float delayMod    = clampf(cfg.echoDelayMod + mod.echoDelayMod, 0.0f, 1.0f);
     float feedback    = clampf(cfg.echoFeedback + mod.echoFeedback, 0.0f, 1.0f);
-    float firResponse = cfg.filter + mod.filter;
+    float firResponse = clampf(cfg.filter + mod.filter, 0.0f, 1.0f);
 
+    // TODO: hysteresis
+    size_t targetSizeSamples = static_cast<size_t>(
+        roundTof(targetSize * mEchoBufferCapacity, kEchoIncrementSamples));
     mBufferIndex = (mBufferIndex + 1) % mEchoBufferSize;
+
+    if(targetSizeSamples != mEchoBufferSize && mBufferIndex == 0)
+    {
+        // only resize buffer at the end of of the last delay
+        // based on this line in docs
+        // > *** This is because the echo hardware doesn't actually read the buffer designation values until it reaches the END of the old buffer!
+        mEchoBufferSize = targetSizeSamples;
+    }
 
     // summing mixdown. if right is normalled to left, acts as a mono signal.
     float   inputFloat = (inputLeft + inputRight) * 0.5f;
     int16_t inputNorm  = static_cast<int16_t>(inputFloat * INT16_MAX);
 
-    // TODO: hysteresis
-    size_t delayNumSamples = static_cast<size_t>(
-        roundTof(delay * mEchoBufferSize, kEchoIncrementSamples));
+    size_t delayModSamples = static_cast<size_t>(delayMod * mEchoBufferSize);
 
     int16_t delayedSample
-        = mEchoBuffer[(mBufferIndex - delayNumSamples) % mEchoBufferSize];
+        = mEchoBuffer[(mBufferIndex - delayModSamples) % mEchoBufferSize];
     //int16_t filteredSample = ProcessFIR(delayedSample);
     int16_t filteredSample = delayedSample;
 

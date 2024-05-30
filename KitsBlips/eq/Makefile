@@ -1,13 +1,8 @@
 # Project Name
-TARGET = romple
-
-# Enable FatFS, for reading from SD card
-USE_FATFS = 1
-# store program in SRAM instead of flash memory. uses the Daisy bootloader
-#APP_TYPE = BOOT_SRAM
+TARGET = eq
 
 # Sources
-CPP_SOURCES = romple.cpp waveloader.cpp sfzloader.cpp
+CPP_SOURCES = eq.cpp
 
 # Library Locations
 LIBDAISY_DIR = ../../libDaisy/
