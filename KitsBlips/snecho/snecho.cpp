@@ -49,11 +49,16 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 
     snes.cfg.echoBufferSize = knobValue(CV_1);
     snes.mod.echoBufferSize = jackValue(CV_5);
-    snes.cfg.echoDelayMod   = 1.0f; // TODO
     snes.cfg.echoFeedback   = knobValue(CV_2);
     snes.mod.echoFeedback   = jackValue(CV_6);
-    snes.cfg.filter         = knobValue(CV_3);
-    snes.mod.filter         = jackValue(CV_7);
+    snes.cfg.filterMix      = knobValue(CV_3);
+    snes.mod.filterMix      = jackValue(CV_7);
+
+    // TODO
+    snes.cfg.echoDelayMod  = 1.0f;
+    snes.mod.echoDelayMod  = 1.0f;
+    snes.cfg.filterSetting = 0;
+    snes.mod.freezeEcho    = 0.0f;
 
     // PSX has no parameters yet D:
 

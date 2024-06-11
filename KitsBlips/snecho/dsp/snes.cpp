@@ -1,11 +1,12 @@
-#include "dsp/snes.h"
-#include "dsp/util.h"
+#include "snes.h"
+#include "util.h"
 
+#include <algorithm>
+#include <cassert>
 #include <climits>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
-#include <cassert>
-#include <algorithm>
 
 /*
   This is a rough transcription of the rules that govern the SNES's reverb/echo pathway, references below:
@@ -13,7 +14,7 @@
 Thank you especially msx @heckscaper for providing extra info/examples
 https://sneslab.net/wiki/FIR_Filter
 https://problemkaputt.de/fullsnes.htm#snesaudioprocessingunitapu
-https://wiki.superfamicom.org/spc700-reference#dsp-echo-function-1511      
+https://wiki.superfamicom.org/spc700-reference#dsp-echo-function-1511
 https://www.youtube.com/watch?v=JC0PywZvKeg
 
 DSP Mixer/Reverb Block Diagram (c=channel, L/R)
@@ -38,35 +39,35 @@ DSP Mixer/Reverb Block Diagram (c=channel, L/R)
                                    Newest --> Oldest    Newest --> Oldest
 */
 
-
-int16_t SNES::Model::ProcessFIR(int16_t inSample)
+int16_t SNES::Model::ProcessFIR(uint8_t filterSetting, int16_t inSample)
 {
-    // update FIR buffer
-    for(size_t i = 0; i < 6; ++i)
+    // update FIR buffer: first is oldest, last is newest
+    for(size_t i = 0; i < 7; ++i)
     {
         mFIRBuffer[i] = mFIRBuffer[i + 1];
     }
     mFIRBuffer[7] = inSample;
 
     // update FIR coeffs
+    size_t idx = filterSetting * 8;
 
     // apply first 7 taps
-    int64_t S = (mFIRCoeff[0] * mFIRBuffer[0] >> 6)
-                + (mFIRCoeff[1] * mFIRBuffer[1] >> 6)
-                + (mFIRCoeff[2] * mFIRBuffer[2] >> 6)
-                + (mFIRCoeff[3] * mFIRBuffer[3] >> 6)
-                + (mFIRCoeff[4] * mFIRBuffer[4] >> 6)
-                + (mFIRCoeff[5] * mFIRBuffer[5] >> 6)
-                + (mFIRCoeff[6] * mFIRBuffer[6] >> 6);
+    int64_t S = 0;
+    S += static_cast<int8_t>(mFIRCoeff[idx + 7]) * mFIRBuffer[0] / 128;
+    S += static_cast<int8_t>(mFIRCoeff[idx + 6]) * mFIRBuffer[1] / 128;
+    S += static_cast<int8_t>(mFIRCoeff[idx + 5]) * mFIRBuffer[2] / 128;
+    S += static_cast<int8_t>(mFIRCoeff[idx + 4]) * mFIRBuffer[3] / 128;
+    S += static_cast<int8_t>(mFIRCoeff[idx + 3]) * mFIRBuffer[4] / 128;
+    S += static_cast<int8_t>(mFIRCoeff[idx + 2]) * mFIRBuffer[5] / 128;
+    S += static_cast<int8_t>(mFIRCoeff[idx + 1]) * mFIRBuffer[6] / 128;
     // Clip
-    S = S & 0xFFFF;
+    S &= 0xFFFF;
     // Apply last tap
-    S = S + (mFIRCoeff[7] * mFIRBuffer[7] >> 6);
+    S += static_cast<int8_t>(mFIRCoeff[idx + 0]) * mFIRBuffer[7] / 128;
 
     // Clamp
-    S = S > 32767 ? 32767 : S;
-    S = S < -32768 ? -32768 : S;
-    return S;
+    S = S > 32767 ? 32767 : S < -32768 ? -32768 : S;
+    return static_cast<int16_t>(S);
 }
 
 SNES::Model::Model(int32_t  _sampleRate,
@@ -74,8 +75,8 @@ SNES::Model::Model(int32_t  _sampleRate,
                    size_t   _echoBufferCapacity)
 : mEchoBuffer(_echoBuffer), mEchoBufferCapacity(_echoBufferCapacity)
 {
-    //assert(_sampleRate == kOriginalSampleRate); // TODO: other sample rates
-    //assert(_echoBufferCapacity == GetBufferDesiredSizeInt16s(_sampleRate));
+    // assert(_sampleRate == kOriginalSampleRate); // TODO: other sample rates
+    // assert(_echoBufferCapacity == GetBufferDesiredSizeInt16s(_sampleRate));
     ClearBuffer();
 }
 
@@ -92,9 +93,11 @@ void SNES::Model::Process(float  inputLeft,
 {
     float targetSize
         = clampf(cfg.echoBufferSize + mod.echoBufferSize, 0.0f, 1.0f);
-    float delayMod    = clampf(cfg.echoDelayMod + mod.echoDelayMod, 0.0f, 1.0f);
-    float feedback    = clampf(cfg.echoFeedback + mod.echoFeedback, 0.0f, 1.0f);
-    float firResponse = clampf(cfg.filter + mod.filter, 0.0f, 1.0f);
+    float   delayMod = clampf(cfg.echoDelayMod + mod.echoDelayMod, 0.0f, 1.0f);
+    float   feedback = clampf(cfg.echoFeedback + mod.echoFeedback, -1.0f, 1.0f);
+    uint8_t filterSetting = cfg.filterSetting % kNumFilterSettings;
+    float   filterMix     = clampf(cfg.filterMix + mod.filterMix, 0.0f, 1.0f);
+    bool    freeze        = mod.freezeEcho > 0.5f;
 
     // TODO: hysteresis
     size_t targetSizeSamples = static_cast<size_t>(clampf(
@@ -107,7 +110,8 @@ void SNES::Model::Process(float  inputLeft,
     {
         // only resize buffer at the end of of the last delay
         // based on this line in docs
-        // > *** This is because the echo hardware doesn't actually read the buffer designation values until it reaches the END of the old buffer!
+        // > *** This is because the echo hardware doesn't actually read the buffer designation values until it reaches
+        // the END of the old buffer!
         mEchoBufferSize = targetSizeSamples;
     }
 
@@ -117,17 +121,26 @@ void SNES::Model::Process(float  inputLeft,
 
     size_t delayModSamples = static_cast<size_t>(delayMod * mEchoBufferSize);
 
-    int16_t delayedSample
-        = mEchoBuffer[(mBufferIndex - delayModSamples) % mEchoBufferSize];
-    //int16_t filteredSample = ProcessFIR(delayedSample);
-    int16_t filteredSample = delayedSample;
+    // shift echo buffer from 15-bit -> 16-bit
+    size_t  delayIndex     = (mBufferIndex - delayModSamples) % mEchoBufferSize;
+    int16_t delayedSample  = mEchoBuffer[delayIndex] << 1;
+    int16_t filteredSample = ProcessFIR(filterSetting, delayedSample);
+    // lerp
+    int8_t  filterMixInt = static_cast<int8_t>(filterMix * INT8_MAX);
+    int16_t mixedSample  = (delayedSample * (128 - filterMixInt) / 128)
+                          + (filteredSample * filterMixInt / 128);
 
     // store current state in echo buffer /w feedback
-    mEchoBuffer[mBufferIndex]
-        = inputNorm
-          + static_cast<int16_t>(static_cast<float>(filteredSample) * feedback);
+    int8_t feedbackInt
+        = static_cast<int8_t>(feedback * INT8_MAX); // emulates EFB register
+    if(!freeze)
+    {
+        // echo buffer is 15-bit, so we remove one bit at the end to emulate that
+        mEchoBuffer[mBufferIndex]
+            = (inputNorm + (mixedSample * feedbackInt / 128)) >> 1;
+    }
 
-    float echoFloat = static_cast<float>(filteredSample) / INT16_MAX;
+    float echoFloat = static_cast<float>(mixedSample) / INT16_MAX;
 
     // The real SNES let you pick between inverting the right channel and not doing that.
     // if you don't want it here, just use a mult on the left output ;)
