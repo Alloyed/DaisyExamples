@@ -21,6 +21,15 @@ struct AdcCalibrationSetting
 struct KitCalibrationSettings
 {
     AdcCalibrationSetting adcValues[ADC_LAST];
+
+    bool operator==(KitCalibrationSettings const &right) const
+    {
+        return std::memcmp(this, &right, sizeof(*this)) == 0;
+    };
+    bool operator!=(KitCalibrationSettings const &right) const
+    {
+        return std::memcmp(this, &right, sizeof(*this)) != 0;
+    };
 };
 
 void AudioCallback(AudioHandle::InputBuffer  in,

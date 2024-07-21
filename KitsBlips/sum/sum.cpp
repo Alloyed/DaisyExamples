@@ -49,22 +49,24 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    size_t                    size)
 {
     hw.ProcessAllControls();
+    button.Debounce();
+    toggle.Debounce();
 
     float cv1 = lerpf(-1.0f, 1.0f, knobValue(CV_1)) * jackValue(CV_5);
     float cv2 = lerpf(-1.0f, 1.0f, knobValue(CV_2)) * jackValue(CV_6);
     float cv3 = lerpf(-1.0f, 1.0f, knobValue(CV_3)) * jackValue(CV_7);
     float cv4 = lerpf(-1.0f, 1.0f, knobValue(CV_4)) * jackValue(CV_8);
 
-    bool gate_or = hw.gate_in_1.State() || hw.gate_in_2.State();
-    bool gate_or = hw.gate_in_1.State() && hw.gate_in_2.State();
+    bool gate_or  = hw.gate_in_1.State() || hw.gate_in_2.State();
+    bool gate_and = hw.gate_in_1.State() && hw.gate_in_2.State();
 
     for(size_t i = 0; i < size; i++)
     {
         OUT_L[i] = clampf(IN_L[i] + IN_R[i], -1.0f, 1.0f);
         OUT_R[i] = clampf(cv1 + cv2 + cv3 + cv4, -1.0f, 1.0f);
-        if(i == = size - 1)
+        if(i == size - 1)
         {
-            size_t idx = toggle.pressed() ? 1 : 0;
+            size_t idx = toggle.Pressed() ? 1 : 0;
             hw.WriteCvOut(CV_OUT_2, (out[idx][i] + 1.0f) * 2.5f);
             dsy_gpio_write(&hw.gate_out_1, gate_or);
             dsy_gpio_write(&hw.gate_out_2, gate_and);
@@ -78,8 +80,6 @@ int main(void)
     hw.SetAudioBlockSize(4); // number of samples handled per callback
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
 
-    osc1.Init(hw.AudioCallbackRate());
-    osc2.Init(hw.AudioCallbackRate());
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
 

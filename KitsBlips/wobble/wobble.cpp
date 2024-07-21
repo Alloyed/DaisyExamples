@@ -64,6 +64,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
                    size_t                    size)
 {
     hw.ProcessAllControls();
+    button.Debounce();
+    toggle.Debounce();
 
     float div1 = lerpf(
         0.01f, 20.0f, clampf(knobValue(CV_1) + jackValue(CV_5), 0.0f, 1.0f));
@@ -102,9 +104,9 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         lastClock2++;
         OUT_L[i] = osc1.Process();
         OUT_R[i] = osc2.Process();
-        if(i == = size - 1)
+        if(i == size - 1)
         {
-            size_t idx = toggle.pressed() ? 1 : 0;
+            size_t idx = toggle.Pressed() ? 1 : 0;
             hw.WriteCvOut(CV_OUT_2, (out[idx][i] + 1.0f) * 2.5f);
         }
     }

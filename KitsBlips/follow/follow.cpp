@@ -56,18 +56,11 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     float gain = lerpf(
         0.8f, 1.5f, clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
 
-    if(button.RisingEdge())
-    {
-        // reset phase
-        osc1.Init(hw.AudioCallbackRate());
-        osc2.Init(hw.AudioCallbackRate());
-    }
-
     for(size_t i = 0; i < size; i++)
     {
-        float in = fabsf(IN_L[i]) * gain;
+        float input = fabsf(IN_L[i]) * gain;
         // TODO: not sample rate independent
-        state    = lerpf(state, in, in > state ? rise : fall);
+        state    = lerpf(state, input, input > state ? rise : fall);
         OUT_L[i] = state;
         if(i == size - 1)
         {
@@ -83,8 +76,6 @@ int main(void)
     hw.SetAudioBlockSize(4); // number of samples handled per callback
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
 
-    osc1.Init(hw.AudioCallbackRate());
-    osc2.Init(hw.AudioCallbackRate());
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
 

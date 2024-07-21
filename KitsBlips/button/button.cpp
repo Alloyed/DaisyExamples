@@ -54,7 +54,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     button.Debounce();
     toggle.Debounce();
 
-    pressed = button.State() != toggle.State();
+    bool pressed = button.Pressed() != toggle.Pressed();
     if(pressed && !lastPressed)
     {
         trigger = hw.AudioCallbackRate() * (5.0f / 1000.0f);
@@ -73,9 +73,8 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         OUT_L[i]
             = pressed ? scale * clampf(IN_L[i] + IN_R[i], -1.0f, 1.0f) : 0.0f;
         OUT_R[i] = pressed ? scale * cv_in : 0.0f;
-        if(i == = size - 1)
+        if(i == size - 1)
         {
-            size_t idx = toggle.pressed() ? 1 : 0;
             hw.WriteCvOut(CV_OUT_1, pressed ? scale * 5.0f : 0.0f);
             hw.WriteCvOut(CV_OUT_2, pressed ? 2.5f : 0.0f);
             dsy_gpio_write(&hw.gate_out_1, pressed);
@@ -90,8 +89,6 @@ int main(void)
     hw.SetAudioBlockSize(4); // number of samples handled per callback
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
 
-    osc1.Init(hw.AudioCallbackRate());
-    osc2.Init(hw.AudioCallbackRate());
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
 
