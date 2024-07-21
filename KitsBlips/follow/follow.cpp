@@ -21,6 +21,7 @@ using namespace daisysp;
 DaisyPatchSM hw;
 Switch       button, toggle;
 float        state = 0.0f;
+float        dt    = 0;
 
 inline constexpr float lerpf(float a, float b, float t)
 {
@@ -30,6 +31,12 @@ inline constexpr float lerpf(float a, float b, float t)
 inline constexpr float clampf(float in, float min, float max)
 {
     return in > max ? max : in < min ? min : in;
+}
+
+inline constexpr float dampf(float a, float b, float halflife, float dt)
+{
+    //https://x.com/FreyaHolmer/status/1757836988495847568
+    return b + (a - b) * exp2f(-dt / halflife);
 }
 
 float knobValue(int32_t cvEnum)
@@ -48,20 +55,19 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 {
     hw.ProcessAllControls();
 
+    // units are ms until half life
     float rise = lerpf(
-        0.3f, 0.0001f, clampf(knobValue(CV_1) + jackValue(CV_5), 0.0f, 1.0f));
-    float fall = lerpf(0.3f,
-                       0.0000001f,
-                       clampf(knobValue(CV_2) + jackValue(CV_6), 0.0f, 1.0f));
+        1.0f, 500.0f, clampf(knobValue(CV_1) + jackValue(CV_5), 0.0f, 1.0f));
+    float fall = lerpf(
+        1.0f, 5000.0ff, clampf(knobValue(CV_2) + jackValue(CV_6), 0.0f, 1.0f));
     float gain = lerpf(
         0.8f, 1.5f, clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
 
     for(size_t i = 0; i < size; i++)
     {
         float input = fabsf(IN_L[i]) * gain;
-        // TODO: not sample rate independent
-        state    = lerpf(state, input, input > state ? rise : fall);
-        OUT_L[i] = state;
+        state       = dampf(state, input, input > state ? rise : fall, dt);
+        OUT_L[i]    = state;
         if(i == size - 1)
         {
             hw.WriteCvOut(CV_OUT_2, OUT_L[i] * 5.0f);
@@ -75,6 +81,7 @@ int main(void)
     hw.Init();
     hw.SetAudioBlockSize(4); // number of samples handled per callback
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
+    dt = 1000.0f / hw.AudioCallbackRate();
 
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
