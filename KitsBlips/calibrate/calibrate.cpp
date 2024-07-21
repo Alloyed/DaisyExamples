@@ -57,7 +57,6 @@ int main(void)
     PersistentStorage<KitCalibrationSettings> storage(hw.qspi);
     storage.Init({}, 0); // stored at very start
     KitCalibrationSettings settings = storage.GetSettings();
-    float                  rawValues[8 * 2];
 
     for(int32_t pin = CV_5; pin <= CV_8; ++pin)
     {
