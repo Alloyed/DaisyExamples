@@ -59,7 +59,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     float rise = lerpf(
         1.0f, 500.0f, clampf(knobValue(CV_1) + jackValue(CV_5), 0.0f, 1.0f));
     float fall = lerpf(
-        1.0f, 5000.0ff, clampf(knobValue(CV_2) + jackValue(CV_6), 0.0f, 1.0f));
+        1.0f, 5000.0f, clampf(knobValue(CV_2) + jackValue(CV_6), 0.0f, 1.0f));
     float gain = lerpf(
         0.8f, 1.5f, clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
 
