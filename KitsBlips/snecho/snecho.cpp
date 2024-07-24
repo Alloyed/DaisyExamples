@@ -1,7 +1,6 @@
 #include "daisy_patch_sm.h"
 
 #include "dsp/snes.h"
-#include "dsp/psx.h"
 #include "dsp/util.h"
 #include "dsp/resampler.h"
 
@@ -17,17 +16,6 @@ constexpr size_t snesBufferSize
 int16_t     snesBuffer[snesBufferSize];
 SNES::Model snes(SNES::kOriginalSampleRate, snesBuffer, snesBufferSize);
 Resampler   snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
-
-constexpr size_t psxBufferSize
-    = PSX::Model::GetBufferDesiredSizeFloats(PSX::kOriginalSampleRate);
-float      psxBuffer[psxBufferSize];
-PSX::Model psx(PSX::kOriginalSampleRate, psxBuffer, psxBufferSize);
-Resampler  psxSampler(PSX::kOriginalSampleRate, PSX::kOriginalSampleRate);
-
-// 1.0f == psx, 0.0f == SNES
-float snesToPsxFade = 0.0f;
-
-// 10ms fade
 
 float knobValue(int32_t cvEnum)
 {
@@ -60,58 +48,37 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     snes.cfg.filterSetting = 0;
     snes.mod.freezeEcho    = 0.0f;
 
-    // PSX has no parameters yet D:
-
     float wetDry = clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
     hw.WriteCvOut(2, 2.5 * wetDry);
 
     if(button.RisingEdge() || hw.gate_in_1.Trig())
     {
         snes.ClearBuffer();
-        psx.ClearBuffer();
+    }
+
+    if(toggle.Pressed() || hw.gate_in_2.State())
+    {
+        snes.mod.freezeEcho = 1.0f;
+    }
+    else
+    {
+        snes.mod.freezeEcho = 0.0f;
     }
 
     for(size_t i = 0; i < size; i++)
     {
-        // fade should take about 10ms
-        // static constexpr float fadeRate = (10.0f / 1000.0f) / SAMPLE_RATE;
-        if(toggle.Pressed() != hw.gate_in_2.State())
-        {
-            // fade to PSX
-            //snesToPsxFade = clampf(snesToPsxFade + fadeRate, 0.0f, 1.0f);
-            snesToPsxFade = 1.0f;
-            //hw.WriteCvOut(2, 2.5);
-        }
-        else
-        {
-            // fade to SNES
-            //snesToPsxFade = clampf(snesToPsxFade - fadeRate, 0.0f, 1.0f);
-            snesToPsxFade = 0.0f;
-            //hw.WriteCvOut(2, 0);
-        }
-
-        float snesLeft, snesRight, psxLeft, psxRight;
-        psxSampler.Process(
-            IN_L[i],
-            IN_R[i],
-            psxLeft,
-            psxRight,
-            [](float inLeft, float inRight, float &outLeft, float &outRight)
-            { psx.Process(inLeft, inRight, outLeft, outRight); });
-
+        // signals are scaled to get a more appropriate clipping level for eurorack's (often very loud) signal values
+        float snesLeft, snesRight;
         snesSampler.Process(
-            IN_L[i],
-            IN_R[i],
+            IN_L[i] * 0.5f,
+            IN_R[i] * 0.5f,
             snesLeft,
             snesRight,
             [](float inLeft, float inRight, float &outLeft, float &outRight)
             { snes.Process(inLeft, inRight, outLeft, outRight); });
 
-        float left  = lerpf(snesLeft, psxLeft, snesToPsxFade);
-        float right = lerpf(snesRight, psxRight, snesToPsxFade);
-
-        OUT_L[i] = lerpf(IN_L[i], left, wetDry);
-        OUT_R[i] = lerpf(IN_R[i], right, wetDry);
+        OUT_L[i] = lerpf(IN_L[i], snesLeft * 2.0f, wetDry);
+        OUT_R[i] = lerpf(IN_R[i], snesRight * 2.0f, wetDry);
     }
 }
 
@@ -119,9 +86,8 @@ int main(void)
 {
     hw.Init();
     hw.SetAudioBlockSize(8); // number of samples handled per callback
-    hw.SetAudioSampleRate(48000.0f);
+    hw.SetAudioSampleRate(SNES::kOriginalSampleRate);
     snesSampler = {SNES::kOriginalSampleRate, hw.AudioSampleRate()};
-    psxSampler  = {PSX::kOriginalSampleRate, hw.AudioSampleRate()};
 
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());

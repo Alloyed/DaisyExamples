@@ -32,8 +32,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#define NUM_PRESETS 10
-static const uint16_t presets[NUM_PRESETS][0x20] = {
+static const uint16_t presets[PSX::kNumPresets][0x20] = {
     {
         /* Name: Room, SPU mem required: 0x26C0 */
         0x007D, 0x005B, 0x6D80, 0x54B8, 0xBED0, 0x0000, 0x0000, 0xBA80,

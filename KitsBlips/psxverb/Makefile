@@ -1,10 +1,10 @@
 # Project Name
-TARGET = snecho
+TARGET = psxverb
 
 # Sources
 CPP_SOURCES += \
-snecho.cpp \
-dsp/snes.cpp \
+psxverb.cpp \
+dsp/psx.cpp \
 dsp/resampler.cpp \
 
 C_INCLUDES += \

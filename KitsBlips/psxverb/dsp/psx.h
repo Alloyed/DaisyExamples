@@ -78,6 +78,7 @@ struct Modulations
 };
 
 static constexpr int32_t kOriginalSampleRate = 22050;
+static constexpr int32_t kNumPresets         = 10;
 
 class Model
 {
