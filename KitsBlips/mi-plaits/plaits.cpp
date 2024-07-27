@@ -50,13 +50,13 @@ class Interface
     {
         CheckJackUsed();
         modulations.engine    = 0.0f;
-        modulations.note      = 0.0f;
+        modulations.note      = hw.controls[CV_5].Value();
         modulations.frequency = 0.0f;
-        modulations.harmonics = 0.0f;
-        modulations.timbre    = 0.0f;
-        modulations.morph     = 0.0f;
+        modulations.harmonics = hw.controls[CV_6].Value();
+        modulations.timbre    = hw.controls[CV_7].Value();
+        modulations.morph     = hw.controls[CV_8].Value();
         modulations.trigger   = hw.gate_in_1.Trig();
-        modulations.level     = 0.0f;
+        modulations.level     = 1.0f;
     }
     void CheckJackUsed()
     {
@@ -66,8 +66,8 @@ class Interface
         // if the input looks like it's the random signal,
         // then mark the jack unplugged and ignore it.
         modulations.frequency_patched = false;
-        modulations.timbre_patched    = false;
-        modulations.morph_patched     = false;
+        modulations.timbre_patched    = true;
+        modulations.morph_patched     = true;
         modulations.level_patched     = false;
     }
 };
@@ -90,12 +90,13 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         OUT_L[i] = static_cast<float>(voiceFrames[i].out) / 32767.0f;
         OUT_R[i] = static_cast<float>(voiceFrames[i].aux) / 32767.0f;
     }
+    hw.WriteCvOut(2, 2.5 * patch.morph);
 }
 
 int main(void)
 {
     hw.Init();
-    hw.SetAudioBlockSize(4); // number of samples handled per callback
+    hw.SetAudioBlockSize(16); // number of samples handled per callback
     hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());

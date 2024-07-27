@@ -55,13 +55,19 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 {
     hw.ProcessAllControls();
 
-    // units are ms until half life
+    // units are ms until half life, exponential curve
     float rise = lerpf(
-        1.0f, 500.0f, clampf(knobValue(CV_1) + jackValue(CV_5), 0.0f, 1.0f));
+        0.1f,
+        5.0f,
+        powf(clampf(knobValue(CV_1) + jackValue(CV_5), 0.0f, 1.0f), 2.0f));
     float fall = lerpf(
-        1.0f, 5000.0f, clampf(knobValue(CV_2) + jackValue(CV_6), 0.0f, 1.0f));
-    float gain = lerpf(
-        0.8f, 1.5f, clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
+        0.1f,
+        5000.0f,
+        powf(clampf(knobValue(CV_2) + jackValue(CV_6), 0.0f, 1.0f), 2.0f));
+    float gain = powf(
+        lerpf(
+            0.8f, 5.0f, clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f)),
+        4.0f);
 
     for(size_t i = 0; i < size; i++)
     {

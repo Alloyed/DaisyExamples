@@ -30,14 +30,14 @@ using namespace daisysp;
  * - inline LFO implementation for better phase control
  */
 
-DaisyPatchSM            hw;
-Switch                  button, toggle;
-VariableShapeOscillator osc1;
-VariableShapeOscillator osc2;
-int32_t                 lastClock1 = 0;
-int32_t                 lastClock2 = 0;
-float                   clock1Freq = 0;
-float                   clock2Freq = 0;
+DaisyPatchSM hw;
+Switch       button, toggle;
+int32_t      lastClock1 = 0;
+int32_t      lastClock2 = 0;
+float        phase1     = 0.0f;
+float        phase2     = 0.0f;
+float        add1       = 0.0001f;
+float        add2       = 0.0001f;
 
 inline constexpr float lerpf(float a, float b, float t)
 {
@@ -59,6 +59,40 @@ float jackValue(int32_t cvEnum)
     return clampf(hw.controls[cvEnum].Value(), -1.0f, 1.0f);
 }
 
+float shapeLfo(float phase, int8_t shape)
+{
+    // ordered by personal preference
+    switch(shape)
+    {
+        case 0:
+        {
+            // triangle
+            return phase < 0.5 ? phase * 2.0f : 1 - ((phase - 0.5f) * 2.0f);
+        }
+        case 1:
+        {
+            // reverse ramp
+            return 1 - phase;
+        }
+        case 2:
+        {
+            // square
+            return phase < 0.5 ? 1.0f : 0.0f;
+        }
+        case 3:
+        {
+            // sin
+            return (cosf(phase * PI_F * 2.0f) + 1.0f) * 0.5f;
+        }
+        case 4:
+        {
+            // ramp
+            return phase;
+        }
+    }
+    return phase;
+}
+
 void AudioCallback(AudioHandle::InputBuffer  in,
                    AudioHandle::OutputBuffer out,
                    size_t                    size)
@@ -68,46 +102,46 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     toggle.Debounce();
 
     float div1 = lerpf(
-        0.01f, 20.0f, clampf(knobValue(CV_1) + jackValue(CV_5), 0.0f, 1.0f));
+        1.0f, 16.0f, clampf(knobValue(CV_1) + jackValue(CV_5), 0.0f, 1.0f));
     float div2 = lerpf(
-        0.01f, 20.0f, clampf(knobValue(CV_2) + jackValue(CV_6), 0.0f, 1.0f));
+        1.0f, 16.0f, clampf(knobValue(CV_2) + jackValue(CV_6), 0.0f, 1.0f));
     float shape1 = lerpf(
-        0.0f, 1.0f, clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
+        0.0f, 4.9f, clampf(knobValue(CV_3) + jackValue(CV_7), 0.0f, 1.0f));
     float shape2 = lerpf(
-        0.0f, 1.0f, clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f));
+        0.0f, 4.9f, clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f));
+
 
     if(button.RisingEdge())
     {
         // reset phase
-        osc1.Init(hw.AudioCallbackRate());
-        osc2.Init(hw.AudioCallbackRate());
+        phase1 = 0.0f;
+        phase2 = 0.0f;
     }
     if(hw.gate_in_1.Trig())
     {
-        clock1Freq = hw.AudioCallbackRate() / lastClock1;
+        add1       = floorf(div1) / lastClock1;
         lastClock1 = 0;
+        phase1     = 0.0f;
     }
     if(hw.gate_in_2.Trig())
     {
-        clock2Freq = hw.AudioCallbackRate() / lastClock2;
+        add2       = floorf(div2) / lastClock2;
         lastClock2 = 0;
+        phase2     = 0.0f;
     }
-
-    osc1.SetFreq(div1);
-    osc1.SetWaveshape(shape1);
-    osc2.SetFreq(div2);
-    osc2.SetWaveshape(shape2);
 
     for(size_t i = 0; i < size; i++)
     {
         lastClock1++;
         lastClock2++;
-        OUT_L[i] = osc1.Process();
-        OUT_R[i] = osc2.Process();
+        phase1   = fmodf(phase1 + add1, 1.0f);
+        phase2   = fmodf(phase2 + add2, 1.0f);
+        OUT_L[i] = -shapeLfo(phase1, static_cast<int8_t>(shape1));
+        OUT_R[i] = -shapeLfo(phase2, static_cast<int8_t>(shape2));
         if(i == size - 1)
         {
             size_t idx = toggle.Pressed() ? 1 : 0;
-            hw.WriteCvOut(CV_OUT_2, (out[idx][i] + 1.0f) * 2.5f);
+            hw.WriteCvOut(CV_OUT_2, (out[idx][i]) * 2.5f);
         }
     }
 }
@@ -115,11 +149,9 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 int main(void)
 {
     hw.Init();
-    hw.SetAudioBlockSize(4); // number of samples handled per callback
-    hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
+    hw.SetAudioBlockSize(1); // number of samples handled per callback
+    hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_96KHZ);
 
-    osc1.Init(hw.AudioCallbackRate());
-    osc2.Init(hw.AudioCallbackRate());
     button.Init(DaisyPatchSM::B7, hw.AudioCallbackRate());
     toggle.Init(DaisyPatchSM::B8, hw.AudioCallbackRate());
 
