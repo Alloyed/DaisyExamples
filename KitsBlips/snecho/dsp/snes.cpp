@@ -122,13 +122,17 @@ void SNES::Model::Process(float  inputLeft,
     size_t delayModSamples = static_cast<size_t>(delayMod * mEchoBufferSize);
 
     // shift echo buffer from 15-bit -> 16-bit
-    size_t  delayIndex     = (mBufferIndex - delayModSamples) % mEchoBufferSize;
-    int16_t delayedSample  = mEchoBuffer[delayIndex] << 1;
-    int16_t filteredSample = ProcessFIR(filterSetting, delayedSample);
-    // lerp
-    int8_t  filterMixInt = static_cast<int8_t>(filterMix * INT8_MAX);
-    int16_t mixedSample  = (delayedSample * (128 - filterMixInt) / 128)
-                          + (filteredSample * filterMixInt / 128);
+    size_t  delayIndex    = (mBufferIndex - delayModSamples) % mEchoBufferSize;
+    int16_t delayedSample = mEchoBuffer[delayIndex] << 1;
+
+    // TODO: filter
+    //int16_t filteredSample = ProcessFIR(filterSetting, delayedSample);
+    //// lerp
+    //int8_t  filterMixInt = static_cast<int8_t>(filterMix * INT8_MAX);
+    //int16_t mixedSample  = (delayedSample * (128 - filterMixInt) / 128)
+    //+(filteredSample * filterMixInt / 128);
+
+    int16_t mixedSample = delayedSample;
 
     // store current state in echo buffer /w feedback
     int8_t feedbackInt

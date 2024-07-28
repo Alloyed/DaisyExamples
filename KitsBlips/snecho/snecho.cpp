@@ -39,14 +39,11 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     snes.mod.echoBufferSize = jackValue(CV_5);
     snes.cfg.echoFeedback   = knobValue(CV_2);
     snes.mod.echoFeedback   = jackValue(CV_6);
-    snes.cfg.filterMix      = knobValue(CV_3);
-    snes.mod.filterMix      = jackValue(CV_7);
+    snes.cfg.echoDelayMod   = knobValue(CV_3);
+    snes.mod.echoDelayMod   = jackValue(CV_7);
 
     // TODO
-    snes.cfg.echoDelayMod  = 1.0f;
-    snes.mod.echoDelayMod  = 1.0f;
     snes.cfg.filterSetting = 0;
-    snes.mod.freezeEcho    = 0.0f;
 
     float wetDry = clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
     hw.WriteCvOut(2, 2.5 * wetDry);
