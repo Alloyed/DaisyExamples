@@ -93,8 +93,8 @@ void SNES::Model::Process(float  inputLeft,
 {
     float targetSize
         = clampf(cfg.echoBufferSize + mod.echoBufferSize, 0.0f, 1.0f);
-    float   delayMod = clampf(cfg.echoDelayMod + mod.echoDelayMod, 0.0f, 1.0f);
-    float   feedback = clampf(cfg.echoFeedback + mod.echoFeedback, -1.0f, 1.0f);
+    float delayMod = clampf(cfg.echoDelayMod + mod.echoDelayMod, 0.0f, 1.0f);
+    feedback       = clampf(cfg.echoFeedback + mod.echoFeedback, -1.0f, 1.0f);
     uint8_t filterSetting = cfg.filterSetting % kNumFilterSettings;
     float   filterMix     = clampf(cfg.filterMix + mod.filterMix, 0.0f, 1.0f);
     bool    freeze        = mod.freezeEcho > 0.5f;
@@ -122,7 +122,9 @@ void SNES::Model::Process(float  inputLeft,
     size_t delayModSamples = static_cast<size_t>(delayMod * mEchoBufferSize);
 
     // shift echo buffer from 15-bit -> 16-bit
-    size_t  delayIndex    = (mBufferIndex - delayModSamples) % mEchoBufferSize;
+    size_t delayIndex = (mBufferIndex - delayModSamples) % mEchoBufferSize;
+    progress
+        = static_cast<float>(delayIndex) / static_cast<float>(mEchoBufferSize);
     int16_t delayedSample = mEchoBuffer[delayIndex] << 1;
 
     // TODO: filter

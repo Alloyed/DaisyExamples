@@ -33,7 +33,7 @@ struct Modulations
 // low sample rate for OG crunchiness
 static constexpr int32_t kOriginalSampleRate = 32000;
 // max echo depth
-static constexpr int32_t kMaxEchoMs = 240;
+static constexpr int32_t kOriginalMaxEchoMs = 240;
 // snap to 16ms increments, 16 * 32000 / 1000
 static constexpr int32_t kEchoIncrementSamples = 512;
 // hardcoded into the snes. not sure how sample rate affects this
@@ -49,15 +49,22 @@ class Model
                  float& outputLeft,
                  float& outputRight);
 
-    static constexpr size_t GetBufferDesiredSizeInt16s(int32_t sampleRate)
+    static constexpr size_t GetBufferDesiredSizeInt16s(int32_t sampleRate,
+                                                       int32_t maxEchoMs)
     {
-        return kMaxEchoMs * (sampleRate / 1000);
+        return maxEchoMs * (sampleRate / 1000);
     }
 
     void ClearBuffer();
 
     Config      cfg;
     Modulations mod;
+    // [0,1]. represents current distance of the read head into the buffer
+    // (for visualization)
+    float progress;
+    // [-1,1]. represents current level of feedback
+    // (for visualization)
+    float feedback;
 
   private:
     int16_t ProcessFIR(uint8_t filterSetting, int16_t in);

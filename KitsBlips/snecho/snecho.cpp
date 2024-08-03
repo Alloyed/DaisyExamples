@@ -12,7 +12,8 @@ DaisyPatchSM hw;
 Switch       button, toggle;
 
 constexpr size_t snesBufferSize
-    = SNES::Model::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate);
+    = SNES::Model::GetBufferDesiredSizeInt16s(SNES::kOriginalSampleRate,
+                                              SNES::kOriginalMaxEchoMs);
 int16_t     snesBuffer[snesBufferSize];
 SNES::Model snes(SNES::kOriginalSampleRate, snesBuffer, snesBufferSize);
 Resampler   snesSampler(SNES::kOriginalSampleRate, SNES::kOriginalSampleRate);
@@ -46,7 +47,6 @@ void AudioCallback(AudioHandle::InputBuffer  in,
     snes.cfg.filterSetting = 0;
 
     float wetDry = clampf(knobValue(CV_4) + jackValue(CV_8), 0.0f, 1.0f);
-    hw.WriteCvOut(2, 2.5 * wetDry);
 
     if(button.RisingEdge() || hw.gate_in_1.Trig())
     {
@@ -76,6 +76,16 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 
         OUT_L[i] = lerpf(IN_L[i], snesLeft * 2.0f, wetDry);
         OUT_R[i] = lerpf(IN_R[i], snesRight * 2.0f, wetDry);
+    }
+
+    if(snes.feedback < 0)
+    {
+        hw.WriteCvOut(
+            2, (1.0f - snes.progress) * lerpf(1.5f, 3.0f, -snes.feedback));
+    }
+    else
+    {
+        hw.WriteCvOut(2, snes.progress * lerpf(1.5f, 3.0f, snes.feedback));
     }
 }
 

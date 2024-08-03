@@ -1,6 +1,9 @@
 # Project Name
 TARGET = snecho
 
+#APP_TYPE = BOOT_SRAM
+APP_TYPE = BOOT_NONE
+
 # Sources
 CPP_SOURCES += \
 snecho.cpp \
